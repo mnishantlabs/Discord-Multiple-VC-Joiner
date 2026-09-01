@@ -1,0 +1,10 @@
+{
+  "theme": "Dark",
+  "accent": "purple",
+  "concurrency": 5,
+  "retry_delay": 3,
+  "proxy": "",
+  "api_timeout": 10,
+  "auto_validate": false,
+  "auto_save": true
+}
