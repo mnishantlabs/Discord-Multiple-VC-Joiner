@@ -17,13 +17,11 @@ import customtkinter as ctk
 from ui.text import truncate
 from ui.theme import (
     CARD,
-    TXT,
     SEC,
     blend,
     accent_hover_hex,
     selected_bg,
 )
-from ui.widgets.tooltip import Tooltip
 from utils.platform import MOD_CTRL, MOD_SHIFT
 
 # Density -> row height (px).

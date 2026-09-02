@@ -38,16 +38,20 @@ class ActionsBarView:
 
     def render(self) -> None:
         s = self.ctx.state
-        if s.selected_channel:
-            text = f"▶ {s.selected_channel['name']}  •  {s.selected_server['name'] if s.selected_server else '?'}"
+        if s.selected_channel and s.selected_server:
+            text = f"Targeted: ▶ {truncate(s.selected_channel['name'], 24)}  •  {truncate(s.selected_server['name'], 20)}"
             color = theme.TXT
-        elif s.selected_server:
-            text = f"▶ {s.selected_server['name']}"
-            color = theme.TXT
+        elif len(s.selected) == 1:
+            token = next(iter(s.selected))
+            text = f"Selected: {truncate(self.ctx.username(self.ctx.store.get(token)), 32)}"
+            color = self.ctx.accent
+        elif s.selected:
+            text = f"Selected: {len(s.selected)} accounts"
+            color = self.ctx.accent
         else:
-            text = "No target"
+            text = "Ready"
             color = theme.MUTED
-        self.target_label.configure(text=truncate(text, 64), text_color=color)
+        self.target_label.configure(text=text, text_color=color)
 
     def join(self) -> None:
         self.ctx.actions.join_selected()

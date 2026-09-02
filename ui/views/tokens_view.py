@@ -1,5 +1,7 @@
-"""Token manager panel: search, filter pills, sort, grouped token list,
-selection (shift/ctrl/plain), context menu, detail panel, validate all.
+"""Token manager panel: search, All/Valid/Invalid filter, sort, grouped compact
+token list, selection (shift/ctrl/plain, accent ring instead of checkboxes),
+context menu, and validate-all. Per-account details moved to the
+double-click Properties dialog.
 
 Deliberately uses a CTk ``ScrollableFrame`` with grouped headers (group row
 and token-row heights differ, so a uniform-height virtual list is not a fit).
@@ -12,36 +14,38 @@ import tkinter as tk
 
 import customtkinter as ctk
 
-from core.enums import SortMode, TokenStatus, CATEGORY_ORDER, CATEGORY_LABELS
-from core.ids import created_from_id
+from core.enums import SortMode, TokenStatus, TokenCategory, CATEGORY_ORDER, CATEGORY_LABELS
 from core.predicates import status, categorize, pass_filters, match_search
 from ui import theme
-from ui.widgets import FilterPill, TokenCard, Tooltip, build_token_tooltip
+from ui.widgets import TokenCard, Tooltip, build_token_tooltip
+from ui.widgets.token_card import CARD_HEIGHTS
 from utils.clipboard import clip_set
 from utils.platform import MOD_CTRL, MOD_SHIFT
 
 SEARCH_DEBOUNCE_MS = 180
 
+FILTER_LABELS = [("All", "all"), ("Valid", "valid"), ("Invalid", "invalid")]
+
 
 class TokensView:
     def __init__(self, parent, ctx) -> None:
         self.ctx = ctx
-        root = ctk.CTkFrame(parent, fg_color=theme.CARD, corner_radius=8)
+        root = ctk.CTkFrame(parent, fg_color=theme.CARD, corner_radius=theme.RADIUS_PANEL)
         self._frame = root
 
         head = ctk.CTkFrame(root, fg_color="transparent")
-        head.pack(fill="x", padx=14, pady=(10, 8))
-        ctk.CTkLabel(head, text="👤 TOKEN MANAGER", font=ctx.fonts["section"],
+        head.pack(fill="x", padx=theme.PAD_PANEL, pady=(10, 8))
+        ctk.CTkLabel(head, text="👤 ACCOUNTS", font=ctx.fonts["section"],
                      text_color=theme.SEC).pack(side="left")
 
         body = ctk.CTkFrame(root, fg_color="transparent")
-        body.pack(fill="both", expand=True, padx=14, pady=(0, 12))
+        body.pack(fill="both", expand=True, padx=theme.PAD_PANEL, pady=(0, 12))
 
         self.search_var = tk.StringVar()
         self.search_var.trace_add("write", lambda *a: self._on_search())
         self.search_entry = ctk.CTkEntry(body, textvariable=self.search_var,
-                                         placeholder_text="🔍  Search…", height=32,
-                                         corner_radius=6, fg_color=theme.BG, border_width=0,
+                                         placeholder_text="🔍  Search accounts…", height=32,
+                                         corner_radius=theme.RADIUS_CTRL, fg_color=theme.BG, border_width=0,
                                          font=ctx.fonts["normal"])
         self.search_entry.pack(fill="x", pady=(0, 6))
 
@@ -54,14 +58,13 @@ class TokensView:
                       fg_color=theme.HOVER, hover_color=ctx.accent_hover,
                       corner_radius=5).pack(side="left", padx=2)
 
-        self._pills = {}
-        for name, key in [("Valid", "valid"), ("Invalid", "invalid"), ("Locked", "locked"),
-                          ("Nitro", "nitro"), ("Phone", "phone")]:
-            pill = FilterPill(row1, name, ctx.accent, ctx.accent_hover,
-                              lambda active, k=key: self._set_filter(k, active), active=True,
-                              font=ctx.fonts["caption"])
-            pill.pack(side="left", padx=2)
-            self._pills[key] = pill
+        self._filter_btns = {}
+        for name, key in FILTER_LABELS:
+            btn = ctk.CTkButton(row1, text=name, width=56, height=26,
+                                font=ctx.fonts["caption"], corner_radius=theme.RADIUS_CTRL,
+                                command=lambda k=key: self._set_view_filter(k))
+            btn.pack(side="left", padx=2)
+            self._filter_btns[key] = btn
 
         self.sort_var = tk.StringVar(value=SortMode.SERVER_COUNT.value)
         ctk.CTkOptionMenu(row1, values=[s.value for s in SortMode], variable=self.sort_var,
@@ -78,12 +81,10 @@ class TokensView:
                       fg_color=theme.HOVER, hover_color=ctx.accent_hover,
                       command=self.validate_all).pack(side="right")
 
-        self.canvas = ctk.CTkScrollableFrame(body, fg_color=theme.BG, corner_radius=8)
+        self.canvas = ctk.CTkScrollableFrame(body, fg_color=theme.BG, corner_radius=theme.RADIUS_PANEL)
         self.canvas.pack(fill="both", expand=True)
 
-        self.detail_frame = ctk.CTkFrame(body, fg_color=theme.BG, corner_radius=8)
-        self.detail_frame.pack(fill="x", pady=(8, 0))
-
+        self._sync_filters()
         self._debounce_after = None
         self._rows: list = []
 
@@ -92,6 +93,13 @@ class TokensView:
 
     def grid(self, *args, **kwargs) -> None:
         self._frame.grid(*args, **kwargs)
+
+    @property
+    def _density_height(self) -> int:
+        density = self.ctx.settings.get("ui_density")
+        if not density:
+            density = "ultra" if self.ctx.settings.compact else "compact"
+        return CARD_HEIGHTS.get(density, 58)
 
     # ---- search debounce ---------------------------------------------------------
     def _on_search(self) -> None:
@@ -102,9 +110,16 @@ class TokensView:
                 pass
         self._debounce_after = self._frame.after(SEARCH_DEBOUNCE_MS, self.render)
 
-    def _set_filter(self, key: str, active: bool) -> None:
-        self.ctx.state.filters[key] = active
+    def _set_view_filter(self, key: str) -> None:
+        self.ctx.state.view_filter = key
+        self._sync_filters()
         self.render()
+
+    def _sync_filters(self) -> None:
+        active = self.ctx.state.view_filter
+        for key, btn in self._filter_btns.items():
+            btn.configure(fg_color=self.ctx.accent if key == active else theme.HOVER,
+                          hover_color=self.ctx.accent_hover)
 
     # ---- selection ---------------------------------------------------------------
     def select_all(self) -> None:
@@ -121,10 +136,23 @@ class TokensView:
 
     def validate_all(self) -> None:
         tokens = list(self.ctx.store.get_all().keys())
+        if not tokens:
+            self.ctx.log.info("No tokens to validate")
+            return
         self.ctx.log.info(f"Validating {len(tokens)} token(s)")
+        self._set_validating(True)
         self.ctx.validation.run(tokens, self._validation_done)
 
+    def _set_validating(self, on: bool) -> None:
+        win = self._frame.winfo_toplevel()
+        if hasattr(win, "stats"):
+            try:
+                win.stats.set_validating(on)
+            except Exception:
+                pass
+
     def _validation_done(self) -> None:
+        self._set_validating(False)
         self._refresh_window()
 
     def _refresh_window(self) -> None:
@@ -139,7 +167,7 @@ class TokensView:
         query = self.search_var.get().lower().strip()
         buckets = {c: [] for c in CATEGORY_ORDER}
         for token, info in tokens.items():
-            if not pass_filters(info, self.ctx.state.filters):
+            if not pass_filters(info, self.ctx.state.view_filter):
                 continue
             if not match_search(info, query):
                 continue
@@ -182,11 +210,10 @@ class TokensView:
             else:
                 self._render_card(row["token"], row["info"], all_keys)
         if empty:
-            ctk.CTkLabel(self.canvas, text="No tokens match", font=self.ctx.fonts["caption"],
+            ctk.CTkLabel(self.canvas, text="No accounts match", font=self.ctx.fonts["caption"],
                          text_color=theme.MUTED).pack(pady=14)
         self.selected_label.configure(
             text=f"Selected: {len(self.ctx.state.selected)} / {len(all_keys)}")
-        self._render_details()
 
     def _render_group_header(self, row) -> None:
         head = ctk.CTkFrame(self.canvas, fg_color="transparent")
@@ -209,13 +236,11 @@ class TokensView:
         username = f"{info.get('username','?')}#{info.get('discriminator','0')}"
         card = TokenCard(
             self.canvas, info, selected, self.ctx.fonts, self.ctx.accent, self.ctx.accent_hover,
-            self.ctx.settings.show_badges, self.ctx.settings.show_ids,
-            self.ctx.settings.compact, dot,
+            self.ctx.settings.show_badges, self._density_height, dot,
             on_click=lambda e: self._on_token_click(e, token, all_keys),
             on_context=lambda e: self._token_context(e, token),
-            on_rejoin=lambda t=token: self._dbl_token_join(t),
+            on_properties=lambda t=token: self._open_properties(t),
             on_middle=lambda t=token: self._middle_copy(t),
-            on_toggle=lambda t=token: self.toggle_token(t),
             username_text=username,
         )
         Tooltip(card.frame, build_token_tooltip(info, username))
@@ -258,51 +283,9 @@ class TokensView:
         uid = self.ctx.store.get(token).get("user_id", "")
         clip_set(self._frame, uid)
 
-    def _dbl_token_join(self, token) -> None:
-        info = self.ctx.store.get(token)
-        servers = info.get("servers", [])
-        if not servers:
-            self.ctx.log.warning("No servers on this token to rejoin")
-            return
-        s = servers[0]
-        self.ctx.state.set_selected({token})
-        self.ctx.state.set_target_server(s["name"], s["id"])
-        self.ctx.log.info(f"Rejoining {s['name']}")
-
-    # ---- details panel -------------------------------------------------------------
-    def _render_details(self):
-        for w in self.detail_frame.winfo_children():
-            w.destroy()
-        uid_text = "-"
-        if len(self.ctx.state.selected) == 1:
-            token = next(iter(self.ctx.state.selected))
-            info = self.ctx.store.get(token)
-            uid_text = info.get("user_id", "-")
-            ctk.CTkLabel(self.detail_frame, text="DETAILS", font=self.ctx.fonts["section"],
-                         text_color=theme.SEC).pack(anchor="w", padx=8, pady=(6, 2))
-            lines = [
-                f"👤  {self.ctx.username(info)}",
-                f"🆔  {info.get('user_id', '?')}",
-                f"📅  Created {created_from_id(info.get('user_id', '0'))}",
-                f"🖥  {len(info.get('servers', []))} servers",
-            ]
-            if info.get("email"):
-                lines.append(f"📧  {info['email']}")
-            if info.get("phone"):
-                lines.append(f"📱  {info['phone']}")
-            if info.get("premium_type", 0) > 0:
-                lines.append(f"⭐  Nitro (tier {info['premium_type']})")
-            if info.get("mfa_enabled"):
-                lines.append("🔐  MFA enabled")
-            if info.get("flags"):
-                lines.append(f"🎖  {', '.join(info['flags'][:6])}")
-            for line in lines:
-                ctk.CTkLabel(self.detail_frame, text=line, font=self.ctx.fonts["caption"],
-                             text_color=theme.SEC, anchor="w").pack(anchor="w", padx=8)
-        else:
-            ctk.CTkLabel(self.detail_frame, text="Select a single token to view details",
-                         font=self.ctx.fonts["caption"], text_color=theme.MUTED).pack(
-                             anchor="w", padx=8, pady=6)
+    def _open_properties(self, token) -> None:
+        from ui.dialogs.properties_dialog import show_properties
+        show_properties(self._frame, self.ctx, token)
 
     # ---- context menu ------------------------------------------------------------
     def _token_context(self, event, token) -> None:
@@ -310,16 +293,27 @@ class TokensView:
             self.ctx.state.select(token)
         info = self.ctx.store.get(token)
 
-        def validate_one(name_mock=token):
+        def validate_one_token():
+            self._set_validating(True)
             self.ctx.validation.run([token], self._validation_done)
 
-        def delete_one(name_mock=token):
+        def delete_one():
             import tkinter.messagebox as mb
             if mb.askyesno("Delete", f"Delete {self.ctx.username(info)}?"):
                 self.ctx.store.remove_token(token)
                 self.ctx.state.selected.discard(token)
                 self.ctx.log.warning("Removed token")
                 self._refresh_window()
+
+        def rejoin():
+            servers = info.get("servers", [])
+            if not servers:
+                self.ctx.log.warning("No servers on this token")
+                return
+            s = servers[0]
+            self.ctx.state.set_selected({token})
+            self.ctx.state.set_target_server(s["name"], s["id"])
+            self.ctx.log.info(f"Rejoining {s['name']}")
 
         def open_profile():
             import webbrowser
@@ -328,7 +322,10 @@ class TokensView:
                 webbrowser.open(f"https://discord.com/users/{uid}")
 
         menu = tk.Menu(self._frame, tearoff=0)
-        menu.add_command(label="Validate", command=validate_one)
+        menu.add_command(label="Properties", command=lambda: self._open_properties(token))
+        menu.add_command(label="Validate", command=validate_one_token)
+        menu.add_command(label="Rejoin First Server", command=rejoin)
+        menu.add_separator()
         menu.add_command(label="Copy Token", command=lambda: clip_set(self._frame, token))
         menu.add_command(label="Copy User ID", command=lambda: clip_set(self._frame, info.get("user_id", "")))
         menu.add_command(label="Copy Username", command=lambda: clip_set(self._frame, self.ctx.username(info)))

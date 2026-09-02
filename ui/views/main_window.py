@@ -36,6 +36,14 @@ SERVERS_REBUILD_TOPIC = "servers.rebuild"
 DEFAULT_SIZE = (1380, 880)
 MIN_SIZE = (760, 580)
 
+# Flex weights for the three body columns (tokens / servers / voice). The
+# server list is the primary workspace, so it gets the widest share.
+COLUMN_WEIGHTS = (26, 44, 30)
+COLUMN_MINSIZES = (210, 300, 250)
+
+# Font size levels used by `_font_scale()`.
+FONT_SIZES = {0: 12, 1: 13, 2: 15}
+
 
 def frame(parent, color=theme.BG):
     """A plain centered-tk Frame with the app background color."""
@@ -89,12 +97,11 @@ class MainWindow(ctk.CTk):
     def _init_modules(self) -> None:
         from storage.settings_repository import SettingsRepository
 
-        ctk.set_appearance_mode("dark")
-
         bus = EventBus()
         self.bridge = AsyncBridge()
         self.store = TokenRepository()
         self.settings = SettingsService(SettingsRepository(), bus)
+        ctk.set_appearance_mode(self.settings.get("appearance_mode", "dark"))
         self.log = LogService(bus)
         self.ctx = AppContext(
             bridge=self.bridge,
@@ -103,7 +110,7 @@ class MainWindow(ctk.CTk):
             store=self.store,
             settings=self.settings,
             log=self.log,
-            fonts=theme.build_fonts(ctk),
+            fonts=theme.build_fonts(ctk, size_normal=self._font_scale()),
         )
 
         from services.discord_client import DiscordClient
@@ -230,9 +237,8 @@ class MainWindow(ctk.CTk):
 
         body = frame(self)
         body.pack(fill="both", expand=True, padx=theme.PAD_OUTER, pady=4)
-        body.grid_columnconfigure(0, weight=1)
-        body.grid_columnconfigure(1, minsize=self._secondary_column_width())
-        body.grid_columnconfigure(2, minsize=self._secondary_column_width())
+        for col, (weight, minsize) in enumerate(zip(COLUMN_WEIGHTS, COLUMN_MINSIZES)):
+            body.grid_columnconfigure(col, weight=weight, minsize=minsize)
         body.grid_rowconfigure(0, weight=1)
         self.tokens_view = TokensView(body, self.ctx)
         self.servers_view = ServersView(body, self.ctx)
@@ -255,18 +261,69 @@ class MainWindow(ctk.CTk):
 
     def _subscribe(self) -> None:
         self.ctx.bus.subscribe(STORE_CHANGED, lambda _: self.refresh_all())
+        self.ctx.bus.subscribe(STORE_CHANGED, lambda _: self.stats.set_validating(False))
+        self.ctx.bus.subscribe(STORE_CHANGED, lambda _: self.actions.render())
         self.ctx.bus.subscribe(SELECTION_CHANGED, lambda _: self.tokens_view.render())
+        self.ctx.bus.subscribe(SELECTION_CHANGED, lambda _: self.actions.render())
         self.ctx.bus.subscribe(STORE_CHANGED, lambda _: self.status.render())
         self.ctx.bus.subscribe(VALIDATION_PROGRESS, lambda p: self._on_validation(p))
+        self.ctx.bus.subscribe(VALIDATION_PROGRESS, lambda _p: self.stats.set_validating(True))
         self.ctx.bus.subscribe(VOICE_STATE_CHANGED, lambda _: self.status.render())
+        self.ctx.bus.subscribe(SERVERS_REBUILD_TOPIC, lambda _: self.servers_view.rebuild())
 
     def _on_validation(self, payload) -> None:
+        self._update_validation_progress(payload)
         self.refresh_all()
+        self.stats.set_validating(True)
+
+    def _update_validation_progress(self, payload) -> None:
+        """Forward (done, total) to the stats bar compact progress row."""
+        try:
+            done, total = payload
+            pct = (done / total) if total else 0.0
+            self.stats.progress.set(pct)
+            self.stats._progress_label.configure(text=f"{done} / {total}  {int(pct * 100)}%")
+        except Exception:
+            pass
 
     def _startup(self) -> None:
         self._bind_shortcuts()
+        self.apply_appearance()
         self.refresh_all()
         self._spawn_api_check()
+        if self.ctx.settings.get("auto_validate", False):
+            self.after(400, self.tokens_view.validate_all)
+
+    def _font_scale(self) -> int:
+        size = self.settings.get("font_size", 1)
+        return FONT_SIZES.get(size, 13)
+
+    def apply_appearance(self) -> None:
+        """Apply theme mode + native backdrop. Font size is baked into the
+        font dict at startup, so a live change needs an app restart."""
+        mode = self.ctx.settings.get("appearance_mode", "dark")
+        ctk.set_appearance_mode(mode)
+        try:
+            from ui.effects import apply_backdrop
+            apply_backdrop(self, self.ctx.settings.get("transparency", "off"))
+        except Exception:
+            pass
+
+    def delete_selected(self) -> None:
+        if not self.ctx.state.selected:
+            self.ctx.log.warning("No selection")
+            return
+        from tkinter import messagebox
+        if messagebox.askyesno("Delete", f"Delete {len(self.ctx.state.selected)} selected token(s)?"):
+            for t in list(self.ctx.state.selected):
+                self.ctx.store.remove_token(t)
+            self.ctx.state.clear_selection()
+            self.ctx.log.warning("Removed selected tokens")
+            self.refresh_all()
+
+    def open_command_palette(self) -> None:
+        from ui.dialogs.command_palette import CommandPalette
+        CommandPalette(self).show()
 
     def _bind_shortcuts(self) -> None:
         from controllers.shortcuts import SHORTCUTS, bind_shortcuts, register_defaults
@@ -282,16 +339,7 @@ class MainWindow(ctk.CTk):
         def delete_selected() -> None:
             if in_input():
                 return
-            from tkinter import messagebox
-            if not self.ctx.state.selected:
-                messagebox.showwarning("No Selection", "Select tokens first")
-                return
-            if messagebox.askyesno("Delete", f"Delete {len(self.ctx.state.selected)} selected token(s)?"):
-                for t in list(self.ctx.state.selected):
-                    self.ctx.store.remove_token(t)
-                self.ctx.state.clear_selection()
-                self.ctx.log.warning("Removed selected tokens")
-                self.refresh_all()
+            self.delete_selected()
 
         def copy_ids() -> None:
             if in_input():
@@ -336,6 +384,7 @@ class MainWindow(ctk.CTk):
         bind_shortcuts(self, SHORTCUTS)
         self.bind("<Control-v>", lambda _e: self._paste_shortcut())
         self.bind("<Control-Shift-C>", lambda _e: copy_usernames())
+        self.bind("<Control-Shift-P>", lambda _e: self.open_command_palette())
 
     def _paste_shortcut(self) -> None:
         w = self.focus_get()

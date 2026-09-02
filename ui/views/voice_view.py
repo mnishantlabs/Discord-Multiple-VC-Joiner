@@ -5,7 +5,6 @@ import tkinter as tk
 
 import customtkinter as ctk
 
-from core.constants import RECENT_VOICE_SHOWN
 from ui import theme
 from ui.text import truncate
 from ui.widgets import Tooltip
@@ -70,13 +69,15 @@ class VoiceView:
             e.pack()
             e.bind("<FocusOut>", lambda *_a: self._commit_advanced())
 
-        ctk.CTkLabel(body, text="Recently Joined", font=ctx.fonts["caption"], text_color=theme.SEC,
-                     anchor="w").pack(fill="x", pady=(8, 2))
-        self.recent_voice_frame = ctk.CTkFrame(body, fg_color=theme.BG, corner_radius=6)
-        self.recent_voice_frame.pack(fill="x", pady=(0, 6))
-
         ctk.CTkLabel(body, text="Channels", font=ctx.fonts["caption"], text_color=theme.SEC,
                      anchor="w").pack(fill="x", pady=(0, 4))
+        self.channel_search_var = tk.StringVar()
+        self.channel_search_var.trace_add("write", lambda *a: self._on_channel_search())
+        self.channel_search_entry = ctk.CTkEntry(body, textvariable=self.channel_search_var,
+                                                 placeholder_text="🔍  Search Channel…", height=26,
+                                                 corner_radius=6, fg_color=theme.BG, border_width=0,
+                                                 font=ctx.fonts["caption"])
+        self.channel_search_entry.pack(fill="x", pady=(0, 4))
         self.channel_list = ctk.CTkScrollableFrame(body, fg_color=theme.BG, corner_radius=8)
         self.channel_list.pack(fill="both", expand=True)
         self.voice_hint = ctk.CTkLabel(body, text="Select a server in the Server List",
@@ -84,6 +85,7 @@ class VoiceView:
         self.voice_hint.pack(pady=6)
 
         self._channels: list = []
+        self._ch_debounce = None
 
     def pack(self, *args, **kwargs) -> None:
         self._frame.pack(*args, **kwargs)
@@ -118,17 +120,27 @@ class VoiceView:
         self._channels = list(channels)
         self.render_channels()
 
+    def _on_channel_search(self) -> None:
+        if self._ch_debounce is not None:
+            try:
+                self._frame.after_cancel(self._ch_debounce)
+            except Exception:
+                pass
+        self._ch_debounce = self._frame.after(180, self.render_channels)
+
     def render_channels(self) -> None:
         for w in self.channel_list.winfo_children():
             w.destroy()
-        if not self._channels:
-            self.voice_hint.configure(text="No voice channels found")
+        query = self.channel_search_var.get().lower().strip()
+        channels = [c for c in self._channels if not query or query in c["name"].lower()]
+        if not channels:
+            self.voice_hint.configure(text="No matching channels")
             return
         self.voice_hint.configure(text="")
-        for ch in self._channels:
+        for ch in channels:
             sel = self.ctx.state.selected_channel and self.ctx.state.selected_channel["id"] == ch["id"]
-            btn = ctk.CTkButton(self.channel_list, anchor="w", height=32,
-                                text=f"🔊 {truncate(ch['name'], 24)}", font=self.ctx.fonts["normal"],
+            btn = ctk.CTkButton(self.channel_list, anchor="w", height=30,
+                                text=f"🔊 {truncate(ch['name'], 24)}", font=self.ctx.fonts["caption"],
                                 fg_color=self.ctx.accent if sel else theme.HOVER,
                                 hover_color=self.ctx.accent_hover,
                                 command=lambda c=ch: self.choose_channel(c))
@@ -153,21 +165,6 @@ class VoiceView:
         self.ctx.log.info(f"Selected channel {ch['name']}")
         self.render_channels()
 
-    def render_recent(self) -> None:
-        for w in self.recent_voice_frame.winfo_children():
-            w.destroy()
-        rv = self.ctx.settings.recent_voice
-        if not rv:
-            ctk.CTkLabel(self.recent_voice_frame, text="None yet", font=self.ctx.fonts["caption"],
-                         text_color=theme.MUTED).pack(anchor="w", padx=6, pady=3)
-            return
-        for item in rv[:RECENT_VOICE_SHOWN]:
-            ctk.CTkButton(self.recent_voice_frame,
-                          text=f"🔊 {truncate(item['channel_name'], 12)}  ·  {truncate(item['guild_name'], 12)}",
-                          height=22, font=self.ctx.fonts["caption"], fg_color=theme.HOVER,
-                          hover_color=self.ctx.accent_hover, corner_radius=4,
-                          command=lambda i=item: self._set_recent_voice(i)).pack(fill="x", pady=1, padx=2)
-
     def _set_recent_voice(self, item) -> None:
         self.guild_id_var.set(item["guild_id"])
         self.channel_id_var.set(item["channel_id"])
@@ -177,4 +174,4 @@ class VoiceView:
         self.ctx.log.info(f"Targeted {item['channel_name']} ({item['guild_name']})")
 
     def render(self) -> None:
-        self.render_recent()
+        self.render_channels()

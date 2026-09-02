@@ -9,6 +9,10 @@ __pycache__/
 venv/
 env/
 
+# App data (contains Discord tokens - NEVER commit)
+tokens.json
+*.json.conf
+
 # IDE
 .idea/
 .vscode/

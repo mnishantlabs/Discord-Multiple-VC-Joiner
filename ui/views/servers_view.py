@@ -5,7 +5,6 @@ import tkinter as tk
 
 import customtkinter as ctk
 
-from core.ids import created_from_id
 from ui import theme
 from ui.text import truncate
 from ui.widgets import Tooltip
@@ -125,12 +124,9 @@ class ServersView:
         name = self.ctx.state.selected_server["name"]
         smap = self.ctx.store.get_server_map()
         data = smap.get(name, {})
-        created = created_from_id(data.get("id", "0"))
-        star = "⭐ Pinned" if name in self.ctx.settings.pinned_servers else "●"
+        star = "⭐" if name in self.ctx.settings.pinned_servers else "●"
         self.server_info_label.configure(
-            text=truncate(
-                f"{star} {name}  |  ID {data.get('id','')}  |  Created {created}  |  {len(data.get('tokens',[]))} tokens",
-                78))
+            text=truncate(f"{star} {name}  •  {len(data.get('tokens', []))} tokens  •  ID {data.get('id', '')}", 64))
 
     # ---- selection ---------------------------------------------------------------
     def select_server(self, name) -> None:
