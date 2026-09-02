@@ -195,11 +195,12 @@ class MainWindow(ctk.CTk):
         self.title("Discord Token Manager")
         self._set_window_icon()
         sw, sh = self.winfo_screenwidth(), self.winfo_screenheight()
+        ww, wh = self._work_area(sw, sh)
         saved = self.ctx.settings.geometry
-        if saved and self._geometry_fits(saved, sw, sh):
+        if saved and self._geometry_fits(saved, ww, wh):
             geometry = saved
         else:
-            geometry = self._adaptive_geometry(sw, sh)
+            geometry = self._adaptive_geometry(ww, wh)
         try:
             self.geometry(geometry)
         except Exception:
@@ -208,22 +209,50 @@ class MainWindow(ctk.CTk):
         self.protocol("WM_DELETE_WINDOW", self.on_close)
 
     @staticmethod
-    def _geometry_fits(geometry: str, sw: int, sh: int) -> bool:
+    def _work_area(sw: int, sh: int) -> tuple[int, int]:
+        """Usable screen area (desktop minus taskbar). Uses SPI_GETWORKAREA
+        when available, else trims ~60px for a typical taskbar."""
+        try:
+            from ctypes import Structure, byref, c_long, windll
+
+            class RECT(Structure):
+                _fields_ = [("left", c_long), ("top", c_long),
+                            ("right", c_long), ("bottom", c_long)]
+
+            rc = RECT()
+            windll.user32.SystemParametersInfoW(0x0030, 0, byref(rc), 0)
+            w = int(rc.right - rc.left)
+            h = int(rc.bottom - rc.top)
+            if w > 400 and h > 300:
+                return (w, h)
+        except Exception:
+            pass
+        return (sw, max(80, sh - 60))
+
+    @staticmethod
+    def _geometry_fits(geometry: str, ww: int, wh: int) -> bool:
         """Accept a saved geometry only if it is a sane window (not smaller
-        than our minimum) and does not overflow the current screen."""
+        than our minimum) and fits inside the usable work area so it never
+        opens off-screen or overflowing on smaller/high-DPI displays."""
         try:
             w, h = geometry.split("+", 1)[0].lower().split("x")
             w, h = int(w), int(h)
         except Exception:
             return False
-        return MIN_SIZE[0] <= w <= sw and MIN_SIZE[1] <= h <= sh
+        return MIN_SIZE[0] < w <= ww and MIN_SIZE[1] < h <= wh
 
     @staticmethod
-    def _adaptive_geometry(sw: int, sh: int) -> str:
-        w = min(DEFAULT_SIZE[0], max(MIN_SIZE[0], sw - 80))
-        h = min(DEFAULT_SIZE[1], max(MIN_SIZE[1], sh - 100))
-        x = max(0, (sw - w) // 2)
-        y = max(0, (sh - h) // 3)
+    def _adaptive_geometry(ww: int, wh: int) -> str:
+        """First-launch default: a compact window that fits comfortably on
+        screen (~60% of the work area, capped at a 1200-ish width) so it does
+        not overflow on smaller or higher-DPI displays. The user can resize
+        freely and that size is remembered for next launch."""
+        w = min(int(ww * 0.60), 1240)
+        h = min(int(wh * 0.70), 760)
+        w = max(w, MIN_SIZE[0])
+        h = max(h, MIN_SIZE[1])
+        x = max(0, (ww - w) // 2)
+        y = max(0, (wh - h) // 3)
         return f"{w}x{h}+{x}+{y}"
 
     def _load_pane_fracs(self) -> list[float]:
