@@ -19,9 +19,6 @@ class ToolbarView:
         inner = ctk.CTkFrame(bar, fg_color="transparent")
         inner.pack(fill="x")
 
-        ctk.CTkLabel(inner, text="Discord Token Manager",
-                     font=ctx.fonts["title"]).pack(side="left", padx=(0, 16))
-
         for text, cmd, tip in [
             ("➕  Import", self.open_import, "Import tokens (Ctrl+I)"),
             ("✔  Validate", self.validate_all, "Validate every account"),

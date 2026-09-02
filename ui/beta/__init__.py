@@ -40,20 +40,31 @@ def apply_beta() -> None:
 
     _theme.build_fonts = _tokens.build_fonts
 
-    # Force a light appearance mode so CustomTkinter's internal colors
-    # (scrollbars, button defaults, transparent surfaces) match the light
-    # "Clean Desktop" palette. Beta-only; the shipped SettingsService is
-    # restored implicitly because default runs never call apply_beta().
-    from services.settings_service import SettingsService
+    # Beta-only setting overrides, applied at the settings repository level (the
+    # single choke point that both ``SettingsService.get`` and the convenience
+    # properties such as ``accent`` / ``show_badges`` route through):
+    #   - appearance_mode -> "light"   (beta UI is a light Material skin)
+    #   - accent          -> "blue"    (SVG-provided blue, not purple)
+    #   - show_badges     -> False     (drop the mobile/desktop badge icons)
+    # Default runs never call apply_beta(), so the shipped service is untouched.
+    from storage.settings_repository import SettingsRepository
 
-    _orig_get = SettingsService.get
+    _orig_get = SettingsRepository.get
 
     def _beta_get(self, key: str, default=None):
         if key == "appearance_mode":
             return "light"
+        if key == "accent":
+            return "blue"
+        if key == "show_badges":
+            return False
         return _orig_get(self, key, default)
 
-    SettingsService.get = _beta_get
+    SettingsRepository.get = _beta_get
+
+    # A few callers read ``appearance_mode`` through ``SettingsService.get``,
+    # which delegates to the repository — already covered above. This is enough:
+    # no additional ``SettingsService`` patch needed.
 
     # Every button/label in the app omits an explicit ``text_color`` and relies
     # on CustomTkinter's theme default, which is a light gray (#DCE4EE) in both
@@ -76,6 +87,16 @@ def apply_beta() -> None:
         _CTkTheme.theme["CTkButton"]["text_color_disabled"] = ["gray40", "gray50"]
     except Exception:
         pass
+
+    # Swap beta view variants in place of the shipped ones. ``_create_views``
+    # lazily imports each view inside the method, so replacing the module
+    # attribute before the window builds is enough for all of them to pick the
+    # beta subclass. The default run never calls apply_beta(), so the shipped
+    # views are untouched.
+    from ui.beta.views import BetaServersView
+    from ui.views import servers_view as _servers_view
+
+    _servers_view.ServersView = BetaServersView
 
 
 def is_beta_argv(argv) -> bool:

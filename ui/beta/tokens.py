@@ -16,8 +16,8 @@ MONO_FAMILY = "JetBrains Mono"   # used for ids / tokens / codes
 BG = "#F3F4F6"                   # Level 0 surface (default used by _frame)
 CARD = "#FFFFFF"                 # Level 1 card / content surface
 HOVER = "#E7E8EA"                # secondary buttons / row hover (surface-container)
-ACCENT = "#5865F2"               # primary / blurple
-ACCENT_HOVER = "#4752C4"         # darker primary
+ACCENT = "#1a73e8"               # primary / blue (from assets/icon.svg)
+ACCENT_HOVER = "#1765cc"         # darker primary
 TXT = "#191C1E"                  # on-surface (near-black)
 SEC = "#454655"                  # on-surface-variant
 MUTED = "#767686"                # outline
@@ -28,26 +28,14 @@ DANGER = "#BA1A1A"               # error
 DANGER_HOVER = "#93000A"
 WARN = "#A95400"                 # amber tone, legible on white
 
-# ---- Accent presets (reuse existing names; hue-adjusted for light bg) ------
+# ---- Accent presets (alpha: blue only, from the provided SVG) ---------------
 ACCENTS = {
-    "purple": "#7B5EA7",
-    "blue": "#5865F2",
-    "blurple": "#5865F2",
-    "green": "#006E2F",
-    "orange": "#C5441C",
-    "red": "#BA1A1A",
-    "pink": "#C0257B",
+    "blue": "#1a73e8",
 }
 ACCENT_HOVERS = {
-    "purple": "#674A8E",
-    "blue": "#4752C4",
-    "blurple": "#4752C4",
-    "green": "#00531F",
-    "orange": "#A43418",
-    "red": "#93000A",
-    "pink": "#9E1C63",
+    "blue": "#1765cc",
 }
-ACCENT_ORDER = ["purple", "blue", "blurple", "green", "orange", "red", "pink"]
+ACCENT_ORDER = ["blue"]
 
 # ---- Layout / shape tokens --------------------------------------------------
 PAD_OUTER = 16

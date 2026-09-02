@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Token Manager</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                            "on-surface-variant": "#454655",
+                            "error": "#ba1a1a",
+                            "secondary-fixed-dim": "#4ae176",
+                            "tertiary": "#b20971",
+                            "on-error-container": "#93000a",
+                            "inverse-primary": "#bec2ff",
+                            "on-secondary-fixed-variant": "#005321",
+                            "on-secondary-container": "#007432",
+                            "outline": "#767686",
+                            "on-background": "#191c1e",
+                            "on-error": "#ffffff",
+                            "surface-container-highest": "#e1e2e4",
+                            "on-primary-container": "#fffdff",
+                            "surface-dim": "#d9dadc",
+                            "primary-container": "#5865f2",
+                            "tertiary-fixed": "#ffd8e6",
+                            "on-secondary-fixed": "#002109",
+                            "surface-container-low": "#f3f4f6",
+                            "background": "#f8f9fb",
+                            "on-secondary": "#ffffff",
+                            "on-tertiary-fixed": "#3d0024",
+                            "secondary-fixed": "#6bff8f",
+                            "on-tertiary-container": "#fffdff",
+                            "error-container": "#ffdad6",
+                            "on-primary": "#ffffff",
+                            "primary": "#5865f2",
+                            "surface-bright": "#f8f9fb",
+                            "tertiary-fixed-dim": "#ffb0d0",
+                            "surface-tint": "#5865f2",
+                            "outline-variant": "#c6c5d7",
+                            "on-primary-fixed-variant": "#222fc2",
+                            "surface-container-lowest": "#ffffff",
+                            "secondary-container": "#6bff8f",
+                            "surface-container": "#edeef0",
+                            "inverse-surface": "#2e3132",
+                            "surface": "#f8f9fb",
+                            "tertiary-container": "#d3308b",
+                            "on-tertiary": "#ffffff",
+                            "on-tertiary-fixed-variant": "#8c0057",
+                            "secondary": "#006e2f",
+                            "primary-fixed-dim": "#bec2ff",
+                            "primary-fixed": "#e0e0ff",
+                            "surface-container-high": "#e7e8ea",
+                            "on-surface": "#191c1e",
+                            "surface-variant": "#e1e2e4",
+                            "on-primary-fixed": "#000569",
+                            "inverse-on-surface": "#f0f1f3"
+                    },
+                    "borderRadius": {
+                            "DEFAULT": "0.25rem",
+                            "lg": "0.5rem",
+                            "xl": "0.75rem",
+                            "full": "9999px"
+                    },
+                    "spacing": {
+                            "xl": "32px",
+                            "gutter": "12px",
+                            "lg": "24px",
+                            "sm": "8px",
+                            "md": "16px",
+                            "sidebar-width": "220px",
+                            "xs": "4px",
+                            "unit": "4px"
+                    },
+                    "fontFamily": {
+                            "body-md": [
+                                    "Inter"
+                            ],
+                            "code": [
+                                    "jetbrainsMono"
+                            ],
+                            "headline-lg": [
+                                    "Inter"
+                            ],
+                            "label-sm": [
+                                    "Inter"
+                            ],
+                            "body-lg": [
+                                    "Inter"
+                            ],
+                            "body-sm": [
+                                    "Inter"
+                            ],
+                            "label-md": [
+                                    "Inter"
+                            ],
+                            "headline-md": [
+                                    "Inter"
+                            ]
+                    },
+                    "fontSize": {
+                            "body-md": [
+                                    "13px",
+                                    {
+                                            "lineHeight": "18px",
+                                            "fontWeight": "400"
+                                    }
+                            ],
+                            "code": [
+                                    "12px",
+                                    {
+                                            "lineHeight": "16px",
+                                            "fontWeight": "400"
+                                    }
+                            ],
+                            "headline-lg": [
+                                    "24px",
+                                    {
+                                            "lineHeight": "30px",
+                                            "letterSpacing": "-0.01em",
+                                            "fontWeight": "600"
+                                    }
+                            ],
+                            "label-sm": [
+                                    "11px",
+                                    {
+                                            "lineHeight": "14px",
+                                            "fontWeight": "500"
+                                    }
+                            ],
+                            "body-lg": [
+                                    "14px",
+                                    {
+                                            "lineHeight": "20px",
+                                            "fontWeight": "400"
+                                    }
+                            ],
+                            "body-sm": [
+                                    "12px",
+                                    {
+                                            "lineHeight": "16px",
+                                            "fontWeight": "400"
+                                    }
+                            ],
+                            "label-md": [
+                                    "12px",
+                                    {
+                                            "lineHeight": "16px",
+                                            "letterSpacing": "0.02em",
+                                            "fontWeight": "500"
+                                    }
+                            ],
+                            "headline-md": [
+                                    "16px",
+                                    {
+                                            "lineHeight": "22px",
+                                            "fontWeight": "600"
+                                    }
+                            ]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .mac-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .mac-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .mac-scrollbar::-webkit-scrollbar-thumb {
+            background-color: rgba(156, 163, 175, 0.4);
+            border-radius: 10px;
+        }
+        .mac-scrollbar:hover::-webkit-scrollbar-thumb {
+            background-color: rgba(107, 114, 128, 0.6);
+        }
+        
+        .win11-surface {
+            background: rgba(248, 249, 251, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        
+        .win11-panel {
+            background: #ffffff;
+            border: 1px solid #e1e2e4;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+    </style>
+</head>
+<body class="bg-surface-container-low text-on-surface font-body-md h-screen w-screen overflow-hidden flex flex-col select-none">
+<!-- Windows-style Toolbar -->
+<header class="win11-surface border-b border-outline-variant flex items-center px-sm w-full z-50 h-12 gap-xs">
+<div class="w-8 h-8 flex items-center justify-center mr-sm">{{DATA:DOCUMENT:DOCUMENT_3}}</div>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-surface-container-high transition-colors text-body-md text-on-surface">
+<span class="material-symbols-outlined" style="font-size: 16px;">add</span>
+<span>Import</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-surface-container-high transition-colors text-body-md text-on-surface">
+<span class="material-symbols-outlined" style="font-size: 16px;">check_circle</span>
+<span>Validate</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-surface-container-high transition-colors text-body-md text-on-surface">
+<span class="material-symbols-outlined" style="font-size: 16px;">refresh</span>
+<span>Refresh</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-surface-container-high transition-colors text-body-md text-on-surface">
+<span class="material-symbols-outlined" style="font-size: 16px;">delete</span>
+<span>Remove</span>
+</button>
+<div class="flex-1"></div>
+<div class="flex items-center gap-xs">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-outline-variant" style="font-size: 14px;">search</span>
+<input class="pl-[28px] pr-2 py-1 border border-outline-variant rounded bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary text-body-sm font-body-sm outline-none transition-all w-48 h-7" placeholder="Search..." type="text"/>
+</div>
+<button class="p-1.5 rounded-md hover:bg-surface-container-high text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined" style="font-size: 18px;">settings</span>
+</button>
+<button class="p-1.5 rounded-md hover:bg-surface-container-high text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined" style="font-size: 18px;">info</span>
+</button>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- Quick Access Sidebar (Windows Style) -->
+<div class="w-sidebar-width win11-surface border-r border-outline-variant flex flex-col h-full py-sm flex-shrink-0">
+<div class="px-3 mb-2 text-xs font-semibold text-outline tracking-wide">QUICK ACCESS</div>
+<nav class="flex-1 flex flex-col gap-0.5 px-1.5">
+<a class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-surface-container-high transition-colors text-on-surface-variant" href="#">
+<span class="material-symbols-outlined text-outline" style="font-size: 18px;">folder_open</span>
+<span class="font-body-md text-body-md">All Tokens (60)</span>
+</a>
+<a class="flex items-center gap-2 px-2 py-1.5 rounded bg-surface-container-highest text-on-surface font-medium" href="#">
+<span class="material-symbols-outlined text-primary" style="font-size: 18px;">account_circle</span>
+<span class="font-body-md text-body-md">Phone Verified (1)</span>
+</a>
+<a class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-surface-container-high transition-colors text-on-surface-variant" href="#">
+<span class="material-symbols-outlined text-outline" style="font-size: 18px;">mark_email_read</span>
+<span class="font-body-md text-body-md">Email Verified (45)</span>
+</a>
+<a class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-surface-container-high transition-colors text-on-surface-variant" href="#">
+<span class="material-symbols-outlined text-outline" style="font-size: 18px;">error</span>
+<span class="font-body-md text-body-md">Unverified (14)</span>
+</a>
+<div class="h-[1px] bg-outline-variant my-2 mx-2"></div>
+<div class="px-2 mb-1 text-xs font-semibold text-outline tracking-wide">VIEWS</div>
+<a class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-surface-container-high transition-colors text-on-surface-variant" href="#">
+<span class="material-symbols-outlined text-outline" style="font-size: 18px;">dns</span>
+<span class="font-body-md text-body-md">Server List</span>
+</a>
+<a class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-surface-container-high transition-colors text-on-surface-variant" href="#">
+<span class="material-symbols-outlined text-outline" style="font-size: 18px;">volume_up</span>
+<span class="font-body-md text-body-md">Voice Control</span>
+</a>
+</nav>
+</div>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col bg-surface-container-low overflow-hidden relative p-sm gap-sm">
+<div class="flex-1 flex gap-sm min-h-0">
+<!-- Accounts / Tokens Pane -->
+<div class="flex-[1.5] win11-panel flex flex-col overflow-hidden">
+<div class="px-3 py-2 border-b border-outline-variant bg-surface-container-lowest flex items-center justify-between">
+<div class="flex items-center gap-2 text-on-surface font-semibold text-sm">
+<span class="material-symbols-outlined text-outline" style="font-size: 16px;">people</span>
+                            ACCOUNTS
+                        </div>
+<div class="flex gap-1">
+<button class="px-2 py-1 bg-primary/10 text-primary text-xs rounded border border-primary/20">All</button>
+<button class="px-2 py-1 hover:bg-surface-container-high text-on-surface-variant text-xs rounded border border-transparent">Valid</button>
+<button class="px-2 py-1 hover:bg-surface-container-high text-on-surface-variant text-xs rounded border border-transparent">Invalid</button>
+</div>
+</div>
+<!-- List Header -->
+<div class="flex items-center px-3 py-1.5 border-b border-outline-variant bg-surface-container-lowest text-xs font-semibold text-outline">
+<div class="w-8 flex justify-center"><input class="rounded border-outline-variant text-primary focus:ring-primary h-3.5 w-3.5" type="checkbox"/></div>
+<div class="flex-1">Name</div>
+<div class="w-32">ID</div>
+<div class="w-20 text-center">Status</div>
+<div class="w-24 text-right">Servers</div>
+</div>
+<div class="flex-1 overflow-y-auto mac-scrollbar bg-surface-container-lowest">
+<!-- Token Row 1 -->
+<div class="flex items-center px-3 py-1.5 border-b border-surface-variant hover:bg-surface-container-low cursor-default group bg-primary/5">
+<div class="w-8 flex justify-center"><input checked="" class="rounded border-outline-variant text-primary focus:ring-primary h-3.5 w-3.5" type="checkbox"/></div>
+<div class="flex-1 flex items-center gap-2">
+<div class="w-6 h-6 rounded bg-primary text-white flex items-center justify-center text-xs font-bold">Y</div>
+<span class="text-sm font-medium text-on-surface">yoruarc#0</span>
+<span class="material-symbols-outlined text-primary" style="font-size: 14px;">smartphone</span>
+</div>
+<div class="w-32 text-xs text-on-surface-variant font-code">1048291837492...</div>
+<div class="w-20 flex justify-center">
+<span class="w-2 h-2 rounded-full bg-secondary-fixed-dim"></span>
+</div>
+<div class="w-24 text-right text-xs text-on-surface-variant">60 Servers</div>
+</div>
+<!-- Token Row 2 -->
+<div class="flex items-center px-3 py-1.5 border-b border-surface-variant hover:bg-surface-container-low cursor-default group">
+<div class="w-8 flex justify-center"><input class="rounded border-outline-variant text-primary focus:ring-primary h-3.5 w-3.5" type="checkbox"/></div>
+<div class="flex-1 flex items-center gap-2">
+<div class="w-6 h-6 rounded bg-surface-container-highest text-on-surface-variant flex items-center justify-center text-xs font-bold">A</div>
+<span class="text-sm text-on-surface">alpha_bot_1</span>
+</div>
+<div class="w-32 text-xs text-outline font-code">9938271625381...</div>
+<div class="w-20 flex justify-center">
+<span class="w-2 h-2 rounded-full bg-secondary-fixed-dim"></span>
+</div>
+<div class="w-24 text-right text-xs text-outline">12 Servers</div>
+</div>
+<!-- Token Row 3 -->
+<div class="flex items-center px-3 py-1.5 border-b border-surface-variant hover:bg-surface-container-low cursor-default group">
+<div class="w-8 flex justify-center"><input class="rounded border-outline-variant text-primary focus:ring-primary h-3.5 w-3.5" type="checkbox"/></div>
+<div class="flex-1 flex items-center gap-2">
+<div class="w-6 h-6 rounded bg-surface-container-highest text-on-surface-variant flex items-center justify-center text-xs font-bold">B</div>
+<span class="text-sm text-on-surface">beta_tester_x</span>
+</div>
+<div class="w-32 text-xs text-outline font-code">8472910384721...</div>
+<div class="w-20 flex justify-center">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+</div>
+<div class="w-24 text-right text-xs text-outline">0 Servers</div>
+</div>
+</div>
+<div class="px-3 py-1.5 border-t border-outline-variant bg-surface-container-low text-xs text-outline flex justify-between">
+<span>1 item selected</span>
+<span>Total: 60 Tokens</span>
+</div>
+</div>
+<!-- Servers & Voice Pane -->
+<div class="flex-1 flex flex-col gap-sm min-w-0">
+<!-- Server List -->
+<div class="flex-[1] win11-panel flex flex-col overflow-hidden">
+<div class="px-3 py-2 border-b border-outline-variant bg-surface-container-lowest flex items-center gap-2 text-on-surface font-semibold text-sm">
+<span class="material-symbols-outlined text-outline" style="font-size: 16px;">dns</span>
+                            SERVER LIST
+                        </div>
+<div class="flex-1 overflow-y-auto mac-scrollbar bg-surface-container-lowest p-2"><div class="flex gap-1 mb-2"><div class="relative flex-1"><span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-outline-variant" style="font-size: 14px;">add_link</span><input class="w-full pl-[28px] pr-2 py-1 border border-outline-variant rounded bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary text-body-sm font-body-sm outline-none transition-all h-7" placeholder="Enter Server ID..." type="text"/></div><button class="p-1 rounded bg-primary text-white hover:bg-primary/90 transition-colors flex items-center justify-center w-7 h-7"><span class="material-symbols-outlined" style="font-size: 18px;">add</span></button></div>
+<div class="flex flex-col gap-1">
+<!-- Server Item 1 -->
+<div class="flex items-center justify-between p-2 rounded hover:bg-surface-container-high border border-outline-variant bg-surface-container-lowest cursor-default">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-secondary-fixed-dim"></div>
+<span class="text-sm font-medium">CAM DESIRES</span>
+</div>
+<div class="text-xs text-outline">1/1 Tokens Joined</div>
+</div>
+<!-- Server Item 2 -->
+<div class="flex items-center justify-between p-2 rounded hover:bg-surface-container-high border border-outline-variant bg-surface-container-lowest cursor-default">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-secondary-fixed-dim"></div>
+<span class="text-sm font-medium">CHOBBER'S SERVER</span>
+</div>
+<div class="text-xs text-outline">1/2 Tokens Joined</div>
+</div>
+<!-- Server Item 3 -->
+<div class="flex items-center justify-between p-2 rounded hover:bg-surface-container-high border border-outline-variant bg-surface-container-lowest cursor-default">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-outline"></div>
+<span class="text-sm font-medium">CyBorG Space</span>
+</div>
+<div class="text-xs text-outline">0/1 Tokens Joined</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Voice Channels -->
+<div class="flex-[1] win11-panel flex flex-col overflow-hidden">
+<div class="px-3 py-2 border-b border-outline-variant bg-surface-container-lowest flex items-center gap-2 text-on-surface font-semibold text-sm">
+<span class="material-symbols-outlined text-outline" style="font-size: 16px;">mic</span>
+                            VOICE CHANNELS
+                        </div>
+<div class="flex-1 flex flex-col bg-surface-container-lowest p-3"><div class="flex gap-1 mb-3"><div class="relative flex-1"><span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-outline-variant" style="font-size: 14px;">tag</span><input class="w-full pl-[28px] pr-2 py-1 border border-outline-variant rounded bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary text-body-sm font-body-sm outline-none transition-all h-7" placeholder="Channel ID..." type="text"/></div><button class="p-1 rounded bg-primary text-white hover:bg-primary/90 transition-colors flex items-center justify-center w-7 h-7"><span class="material-symbols-outlined" style="font-size: 18px;">login</span></button></div>
+<div class="text-xs text-outline mb-1">Current Server</div>
+<div class="text-sm font-medium mb-3">No server selected</div>
+<div class="border-t border-outline-variant pt-2">
+<div class="flex items-center justify-between text-xs text-outline mb-2">
+<span>Channels</span>
+<span class="material-symbols-outlined cursor-pointer" style="font-size: 14px;">arrow_drop_down</span>
+</div>
+<div class="min-h-24 border border-outline-variant rounded bg-surface-container-low flex flex-col p-1 gap-1"><div class="flex items-center justify-between px-2 py-1 rounded bg-surface-container-lowest border border-outline-variant/30"><div class="flex items-center gap-2"><div class="w-4 h-4 rounded-full bg-primary text-white flex items-center justify-center text-[8px] font-bold">Y</div><span class="text-xs font-medium">yoruarc#0</span></div><div class="flex gap-1"><button class="p-0.5 hover:bg-surface-container-high rounded text-outline hover:text-primary transition-colors"><span class="material-symbols-outlined" style="font-size: 14px;">mic</span></button><button class="p-0.5 hover:bg-surface-container-high rounded text-outline hover:text-error transition-colors"><span class="material-symbols-outlined" style="font-size: 14px;">mic_off</span></button></div></div><div class="flex items-center justify-between px-2 py-1 rounded bg-surface-container-lowest border border-outline-variant/30"><div class="flex items-center gap-2"><div class="w-4 h-4 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center text-[8px] font-bold">A</div><span class="text-xs font-medium">alpha_bot_1</span></div><div class="flex gap-1"><button class="p-0.5 hover:bg-surface-container-high rounded text-outline hover:text-primary transition-colors"><span class="material-symbols-outlined" style="font-size: 14px;">mic</span></button><button class="p-0.5 hover:bg-surface-container-high rounded text-outline hover:text-error transition-colors"><span class="material-symbols-outlined" style="font-size: 14px;">mic_off</span></button></div></div></div>
+</div>
+<div class="mt-auto pt-3 flex justify-end gap-2"><button class="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded bg-error text-white text-sm font-medium hover:bg-error/90 transition-colors shadow-sm"><span class="material-symbols-outlined" style="font-size: 18px;">call_end</span>Leave</button><button class="flex-[1.5] flex items-center justify-center gap-2 px-3 py-2 rounded bg-secondary-fixed-dim text-on-secondary-container text-sm font-bold hover:opacity-90 transition-colors shadow-sm"><span class="material-symbols-outlined" style="font-size: 18px;">volume_up</span>JOIN VOICE</button></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Status/Activity Panel (Windows Style) -->
+<div class="h-40 win11-panel flex flex-col flex-shrink-0 z-10 mx-sm mb-sm overflow-hidden">
+<div class="flex items-center justify-between px-3 py-1.5 border-b border-outline-variant bg-surface-container-lowest">
+<div class="flex items-center gap-2 text-on-surface font-semibold text-xs">
+<span class="material-symbols-outlined text-outline" style="font-size: 14px;">terminal</span>
+                        ACTIVITY
+                    </div>
+<div class="flex gap-1">
+<button class="px-2 py-0.5 text-[10px] rounded border border-outline-variant hover:bg-surface-container-high">Copy</button>
+<button class="px-2 py-0.5 text-[10px] rounded border border-outline-variant hover:bg-surface-container-high">Save</button>
+<button class="px-1 py-0.5 text-[10px] rounded border border-outline-variant hover:bg-surface-container-high flex items-center justify-center"><span class="material-symbols-outlined" style="font-size: 12px;">pause</span></button>
+<div class="w-[1px] h-3 bg-outline-variant mx-1 self-center"></div>
+<button class="px-2 py-0.5 text-[10px] rounded bg-surface-container-high border border-outline-variant font-medium">All</button>
+<button class="px-2 py-0.5 text-[10px] rounded hover:bg-surface-container-high text-outline">INFO</button>
+<button class="px-2 py-0.5 text-[10px] rounded hover:bg-surface-container-high text-outline">SUCCESS</button>
+<button class="px-2 py-0.5 text-[10px] rounded hover:bg-surface-container-high text-outline">WARNING</button>
+<button class="px-2 py-0.5 text-[10px] rounded hover:bg-surface-container-high text-outline">ERROR</button>
+</div>
+</div>
+<div class="flex-1 p-2 overflow-y-auto mac-scrollbar bg-surface-container-lowest text-on-surface font-code text-xs leading-relaxed">
+<div class="flex gap-2 mb-0.5 hover:bg-surface-container-high px-1 rounded"><span class="text-outline w-16 flex-shrink-0">17:35:10</span> <span class="text-primary w-12 flex-shrink-0">[INFO]</span> <span>Initialized TokenManager Core</span></div>
+<div class="flex gap-2 mb-0.5 hover:bg-surface-container-high px-1 rounded"><span class="text-outline w-16 flex-shrink-0">17:35:12</span> <span class="text-primary w-12 flex-shrink-0">[INFO]</span> <span>Loaded 60 tokens from storage.</span></div>
+<div class="flex gap-2 mb-0.5 hover:bg-surface-container-high px-1 rounded"><span class="text-outline w-16 flex-shrink-0">17:35:15</span> <span class="text-secondary-fixed-dim w-12 flex-shrink-0">[OK]</span> <span>Validation complete. 59 valid, 1 invalid.</span></div>
+<div class="flex gap-2 mb-0.5 px-1 mt-1"><span class="text-outline animate-pulse">_</span></div>
+</div>
+<div class="h-6 border-t border-outline-variant bg-surface-container-lowest flex items-center px-2 text-[10px] text-outline gap-4">
+<div class="flex items-center gap-1"><div class="w-1.5 h-1.5 rounded-full bg-secondary-fixed-dim"></div> Ready</div>
+<div><span class="font-medium text-on-surface">60</span> Tokens</div>
+<div><span class="font-medium text-on-surface">4</span> Servers</div>
+<div>Idle</div>
+<div class="flex-1"></div>
+<div>17:35:40</div>
+<div class="flex items-center gap-1"><div class="w-1.5 h-1.5 rounded-full bg-secondary-fixed-dim"></div> API: Online</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>
