@@ -61,6 +61,17 @@ pip install -r requirements.txt
 python main.py
 ```
 
+### Experimental beta UI
+
+Launch with `--beta` to render the experimental Material 3 "Clean Desktop"
+redesign (light palette, Inter typography, new radii/spacing, crisp status
+glyphs). It re-themes the existing interface at runtime and does **not** touch
+the shipped styles or the default run — pass no flag for the standard dark UI.
+
+```powershell
+python main.py --beta
+```
+
 ### Packaging
 
 The repository ships three PyInstaller specs sharing a common analysis helper:
