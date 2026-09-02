@@ -4,7 +4,7 @@ Organize, validate, and manage voice channels across multiple Discord accounts f
 
 **Website:** https://mnishantlabs.github.io/Discord-Multiple-VC-Joiner/
 
-![release](https://img.shields.io/badge/release-v1.0.0-5865f2?style=for-the-badge)
+![release](https://img.shields.io/badge/release-v1.0.1-5865f2?style=for-the-badge)
 ![license](https://img.shields.io/badge/license-MIT-lightgrey?style=for-the-badge)
 ![Windows](https://img.shields.io/badge/platform-Windows_10_11-0078d6?style=for-the-badge)
 
@@ -35,7 +35,7 @@ Focus on what you manage, not how you manage it.
 
 ## Download
 
-Pick the flavor that suits you. All three are the same **v1.0.0** build.
+Pick the flavor that suits you. All three are the same **v1.0.1** build.
 
 | Edition | File | Notes |
 | --- | --- | --- |
