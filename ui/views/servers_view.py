@@ -43,6 +43,7 @@ class ServersView:
 
         self.server_list = ctk.CTkScrollableFrame(body, fg_color=theme.BG, corner_radius=theme.RADIUS_PANEL)
         self.server_list.grid(row=1, column=0, sticky="nsew")
+        self._frame.bind("<Configure>", self._on_configure)
 
         self.server_info_label = ctk.CTkLabel(body, text="", font=ctx.fonts["caption"],
                                               text_color=theme.SEC, anchor="w")
@@ -65,6 +66,9 @@ class ServersView:
                                                      height=self.members_height)
 
         self._debounce = None
+        self._configure_after = None
+        self._mem_resize_after = None
+        self._last_width = 0
         self._members_drag_active = None
         self._members_h = self.members_height
         self._apply_members_layout()
@@ -90,6 +94,45 @@ class ServersView:
                 pass
         self._debounce = self._frame.after(180, self.render)
 
+    # ---- resize handling -------------------------------------------------------
+    def _on_configure(self, _event=None) -> None:
+        if self._configure_after is not None:
+            try:
+                self._frame.after_cancel(self._configure_after)
+            except Exception:
+                pass
+        self._configure_after = self._frame.after(80, self._deferred_configure)
+        if self._mem_resize_after is not None:
+            try:
+                self._frame.after_cancel(self._mem_resize_after)
+            except Exception:
+                pass
+        self._mem_resize_after = self._frame.after(50, self._cap_members_height)
+
+    def _deferred_configure(self) -> None:
+        self._configure_after = None
+        try:
+            w = self._frame.winfo_width()
+        except Exception:
+            return
+        if w > 0 and w != self._last_width:
+            self._last_width = w
+            self.render()
+
+    def _cap_members_height(self) -> None:
+        self._mem_resize_after = None
+        if self._members_drag_active is not None:
+            return
+        try:
+            total = self._frame.winfo_height()
+        except Exception:
+            return
+        if total > 0:
+            limit = total - MIN_SERVERS_H
+            if self._members_h > limit:
+                self._members_h = max(MIN_MEMBERS_H, limit)
+                self._apply_members_layout()
+
     # ---- render ---------------------------------------------------------------
     def render(self) -> None:
         for w in self.server_list.winfo_children():
@@ -113,7 +156,7 @@ class ServersView:
             row.pack(fill="x", pady=2, ipady=3)
             star_lbl = ctk.CTkLabel(row, text=star, font=self.ctx.fonts["caption"])
             star_lbl.pack(side="left", padx=(8, 2))
-            name_lbl = ctk.CTkLabel(row, text=truncate(name, 28), font=self.ctx.fonts["normal"],
+            name_lbl = ctk.CTkLabel(row, text=truncate(name, self._name_chars()), font=self.ctx.fonts["normal"],
                                     anchor="w")
             name_lbl.pack(side="left", fill="x", expand=True)
             count_lbl = ctk.CTkLabel(row, text=str(len(data["tokens"])), font=self.ctx.fonts["caption"],
@@ -152,7 +195,26 @@ class ServersView:
         data = smap.get(name, {})
         star = "⭐" if name in self.ctx.settings.pinned_servers else "●"
         self.server_info_label.configure(
-            text=truncate(f"{star} {name}  •  {len(data.get('tokens', []))} tokens  •  ID {data.get('id', '')}", 64))
+            text=truncate(f"{star} {name}  •  {len(data.get('tokens', []))} tokens  •  ID {data.get('id', '')}",
+                          self._info_chars()))
+
+    def _name_chars(self) -> int:
+        w = self._frame.winfo_width()
+        if w <= 0:
+            return 28
+        return max(12, min(60, int((w - 50) / 8)))
+
+    def _info_chars(self) -> int:
+        w = self._frame.winfo_width()
+        if w <= 0:
+            return 64
+        return max(20, min(90, int((w - 30) / 6)))
+
+    def _member_chars(self) -> int:
+        w = self._frame.winfo_width()
+        if w <= 0:
+            return 22
+        return max(10, min(50, int((w - 80) / 7)))
 
     # ---- selection ---------------------------------------------------------------
     def select_server(self, name) -> None:
@@ -198,7 +260,7 @@ class ServersView:
             row = ctk.CTkFrame(self.server_members, fg_color=theme.CARD, corner_radius=theme.RADIUS_CTRL)
             row.pack(fill="x", pady=2)
             row.grid_columnconfigure(0, weight=1)
-            ctk.CTkLabel(row, text=truncate(m["username"], 22), font=self.ctx.fonts["caption"],
+            ctk.CTkLabel(row, text=truncate(m["username"], self._member_chars()), font=self.ctx.fonts["caption"],
                          anchor="w").grid(row=0, column=0, sticky="ew", padx=(6, 2), pady=3)
             ctk.CTkButton(row, text="Select", width=60, height=22, font=self.ctx.fonts["caption"],
                           fg_color=theme.HOVER, hover_color=self.ctx.accent_hover,

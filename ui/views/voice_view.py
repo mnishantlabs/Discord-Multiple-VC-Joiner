@@ -80,12 +80,15 @@ class VoiceView:
         self.channel_search_entry.pack(fill="x", pady=(0, 4))
         self.channel_list = ctk.CTkScrollableFrame(body, fg_color=theme.BG, corner_radius=8)
         self.channel_list.pack(fill="both", expand=True)
+        self._frame.bind("<Configure>", self._on_configure)
         self.voice_hint = ctk.CTkLabel(body, text="Select a server in the Server List",
                                        font=ctx.fonts["caption"], text_color=theme.MUTED)
         self.voice_hint.pack(pady=6)
 
         self._channels: list = []
         self._ch_debounce = None
+        self._configure_after = None
+        self._last_width = 0
 
     def pack(self, *args, **kwargs) -> None:
         self._frame.pack(*args, **kwargs)
@@ -114,7 +117,7 @@ class VoiceView:
 
     # ---- target/channel ------------------------------------------------------------
     def set_target_label(self, text) -> None:
-        self.voice_server_label.configure(text=truncate(text, 26), text_color=theme.TXT)
+        self.voice_server_label.configure(text=truncate(text, self._info_chars()), text_color=theme.TXT)
 
     def set_channels(self, channels) -> None:
         self._channels = list(channels)
@@ -128,6 +131,37 @@ class VoiceView:
                 pass
         self._ch_debounce = self._frame.after(180, self.render_channels)
 
+    # ---- resize handling -------------------------------------------------------
+    def _on_configure(self, _event=None) -> None:
+        if self._configure_after is not None:
+            try:
+                self._frame.after_cancel(self._configure_after)
+            except Exception:
+                pass
+        self._configure_after = self._frame.after(80, self._deferred_configure)
+
+    def _deferred_configure(self) -> None:
+        self._configure_after = None
+        try:
+            w = self._frame.winfo_width()
+        except Exception:
+            return
+        if w > 0 and w != self._last_width:
+            self._last_width = w
+            self.render_channels()
+
+    def _name_chars(self) -> int:
+        w = self._frame.winfo_width()
+        if w <= 0:
+            return 24
+        return max(10, min(50, int((w - 40) / 7)))
+
+    def _info_chars(self) -> int:
+        w = self._frame.winfo_width()
+        if w <= 0:
+            return 26
+        return max(12, min(60, int((w - 30) / 7)))
+
     def render_channels(self) -> None:
         for w in self.channel_list.winfo_children():
             w.destroy()
@@ -140,7 +174,7 @@ class VoiceView:
         for ch in channels:
             sel = self.ctx.state.selected_channel and self.ctx.state.selected_channel["id"] == ch["id"]
             btn = ctk.CTkButton(self.channel_list, anchor="w", height=30,
-                                text=f"🔊 {truncate(ch['name'], 24)}", font=self.ctx.fonts["caption"],
+                                text=f"🔊 {truncate(ch['name'], self._name_chars())}", font=self.ctx.fonts["caption"],
                                 fg_color=self.ctx.accent if sel else theme.HOVER,
                                 hover_color=self.ctx.accent_hover,
                                 command=lambda c=ch: self.choose_channel(c))
@@ -170,7 +204,7 @@ class VoiceView:
         self.channel_id_var.set(item["channel_id"])
         self.ctx.state.set_target_server(item["guild_name"], item["guild_id"])
         self.ctx.state.set_target_channel(item)
-        self.voice_server_label.configure(text=truncate(item["guild_name"], 26), text_color=theme.TXT)
+        self.voice_server_label.configure(text=truncate(item["guild_name"], self._info_chars()), text_color=theme.TXT)
         self.ctx.log.info(f"Targeted {item['channel_name']} ({item['guild_name']})")
 
     def render(self) -> None:

@@ -323,15 +323,25 @@ class MainWindow(ctk.CTk):
         self._place_panes()
 
     def _on_body_configure(self, _event=None) -> None:
+        """Debounced: coalesces rapid <Configure> events during resize."""
         if self._drag:
             return
         if getattr(self, "_layout_guard", False):
             return
-        self._layout_guard = True
-        try:
-            self._place_panes()
-        finally:
-            self._layout_guard = False
+        self._schedule_layout()
+
+    def _schedule_layout(self) -> None:
+        """Debounced _place_panes — coalesces rapid <Configure> events during
+        a window resize so layout is computed once per 50ms idle tick."""
+        if getattr(self, "_layout_after_id", None):
+            self.after_cancel(self._layout_after_id)
+        self._layout_after_id = self.after(50, self._run_pending_layout)
+
+    def _run_pending_layout(self) -> None:
+        self._layout_after_id = None
+        if self._drag:
+            return
+        self._place_panes()
 
     def _applied_widths(self):
         return [int(f.winfo_width()) for f in self._panes]

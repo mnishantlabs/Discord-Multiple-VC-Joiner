@@ -47,6 +47,7 @@ class TokenCard:
         on_properties=None,     # () on double-click
         on_middle=None,         # () on middle-click
         username_text="",
+        name_chars=30,
     ):
         self._parent = parent
         self.info = info
@@ -62,6 +63,7 @@ class TokenCard:
         self.on_properties = on_properties
         self.on_middle = on_middle
         self.username_text = username_text
+        self.name_chars = name_chars
         self.frame = self._build()
 
     # -- rendering ----------------------------------------------------------------
@@ -85,7 +87,7 @@ class TokenCard:
         txt.pack(side="left", fill="x", expand=True)
         name_row = ctk.CTkFrame(txt, fg_color="transparent")
         name_row.pack(fill="x")
-        ctk.CTkLabel(name_row, text=truncate(self.username_text, 30), font=self.fonts["normal"],
+        ctk.CTkLabel(name_row, text=truncate(self.username_text, self.name_chars), font=self.fonts["normal"],
                     ).pack(side="left")
 
         if self.show_badges:

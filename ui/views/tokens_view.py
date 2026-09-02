@@ -84,9 +84,12 @@ class TokensView:
         self.canvas = ctk.CTkScrollableFrame(body, fg_color=theme.BG, corner_radius=theme.RADIUS_PANEL,
                                          width=110)
         self.canvas.pack(fill="both", expand=True)
+        self.canvas.bind("<Configure>", self._on_configure)
 
         self._sync_filters()
         self._debounce_after = None
+        self._configure_after = None
+        self._last_width = 0
         self._rows: list = []
 
     def pack(self, *args, **kwargs) -> None:
@@ -110,6 +113,25 @@ class TokensView:
             except Exception:
                 pass
         self._debounce_after = self._frame.after(SEARCH_DEBOUNCE_MS, self.render)
+
+    # ---- resize debounce --------------------------------------------------------
+    def _on_configure(self, _event=None) -> None:
+        if self._configure_after is not None:
+            try:
+                self._frame.after_cancel(self._configure_after)
+            except Exception:
+                pass
+        self._configure_after = self._frame.after(80, self._deferred_configure)
+
+    def _deferred_configure(self) -> None:
+        self._configure_after = None
+        try:
+            w = self._frame.winfo_width()
+        except Exception:
+            return
+        if w > 0 and w != self._last_width:
+            self._last_width = w
+            self.render()
 
     def _set_view_filter(self, key: str) -> None:
         self.ctx.state.view_filter = key
@@ -243,8 +265,16 @@ class TokensView:
             on_properties=lambda t=token: self._open_properties(t),
             on_middle=lambda t=token: self._middle_copy(t),
             username_text=username,
+            name_chars=self._name_chars(),
         )
         Tooltip(card.frame, build_token_tooltip(info, username))
+
+    def _name_chars(self) -> int:
+        """Max username characters that fit the current pane width (approx)."""
+        w = self._frame.winfo_width()
+        if w <= 0:
+            return 30
+        return max(14, min(60, int((w - 60) / 8)))
 
     def _toggle_group(self, key) -> None:
         self.ctx.state.collapsed_groups[key.value] = not self.ctx.state.collapsed_groups[key.value]
