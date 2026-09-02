@@ -53,6 +53,7 @@ class TokenCard:
         self.token = info.get("_token", "")
         self.selected = selected
         self.fonts = fonts
+        self.accent = accent
         self.show_badges = show_badges
         self.height = height
         self.status_dot = status_dot
@@ -66,13 +67,13 @@ class TokenCard:
     # -- rendering ----------------------------------------------------------------
     def _build(self):
         two_line = self.height >= 62
-        accent_hover = accent_hover_hex(accent)
-        card = ctk.CTkFrame(self._parent, fg_color=selected_bg(accent) if self.selected else CARD,
+        accent_hover = accent_hover_hex(self.accent)
+        card = ctk.CTkFrame(self._parent, fg_color=selected_bg(self.accent) if self.selected else CARD,
                             corner_radius=6, height=self.height)
         card.pack_propagate(False)
         card.pack(fill="x", pady=2)
         if self.selected:
-            card.configure(border_width=2, border_color=blend(accent, "#FFFFFF", 0.15))
+            card.configure(border_width=2, border_color=blend(self.accent, "#FFFFFF", 0.15))
 
         inner = ctk.CTkFrame(card, fg_color="transparent")
         inner.pack(fill="both", padx=10, pady=2)

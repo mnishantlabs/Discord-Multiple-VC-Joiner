@@ -51,24 +51,24 @@ class TokensView:
 
         row1 = ctk.CTkFrame(body, fg_color="transparent")
         row1.pack(fill="x", pady=(0, 8))
-        ctk.CTkButton(row1, text="☑", command=self.select_all, width=30, height=26,
+        ctk.CTkButton(row1, text="☑", command=self.select_all, width=22, height=24,
                       fg_color=theme.HOVER, hover_color=ctx.accent_hover,
-                      corner_radius=5).pack(side="left", padx=2)
-        ctk.CTkButton(row1, text="⇄", command=self.invert, width=30, height=26,
+                      corner_radius=5).pack(side="left", padx=1)
+        ctk.CTkButton(row1, text="⇄", command=self.invert, width=22, height=24,
                       fg_color=theme.HOVER, hover_color=ctx.accent_hover,
-                      corner_radius=5).pack(side="left", padx=2)
+                      corner_radius=5).pack(side="left", padx=1)
 
         self._filter_btns = {}
         for name, key in FILTER_LABELS:
-            btn = ctk.CTkButton(row1, text=name, width=56, height=26,
+            btn = ctk.CTkButton(row1, text=name, width=46, height=24,
                                 font=ctx.fonts["caption"], corner_radius=theme.RADIUS_CTRL,
                                 command=lambda k=key: self._set_view_filter(k))
-            btn.pack(side="left", padx=2)
+            btn.pack(side="left", padx=1)
             self._filter_btns[key] = btn
 
         self.sort_var = tk.StringVar(value=SortMode.SERVER_COUNT.value)
         ctk.CTkOptionMenu(row1, values=[s.value for s in SortMode], variable=self.sort_var,
-                          command=lambda *a: self.render(), width=120, height=26,
+                          command=lambda *a: self.render(), width=100, height=24,
                           font=ctx.fonts["caption"], fg_color=theme.BG,
                           button_color=theme.HOVER, button_hover_color=theme.HOVER).pack(side="right")
 
@@ -81,7 +81,8 @@ class TokensView:
                       fg_color=theme.HOVER, hover_color=ctx.accent_hover,
                       command=self.validate_all).pack(side="right")
 
-        self.canvas = ctk.CTkScrollableFrame(body, fg_color=theme.BG, corner_radius=theme.RADIUS_PANEL)
+        self.canvas = ctk.CTkScrollableFrame(body, fg_color=theme.BG, corner_radius=theme.RADIUS_PANEL,
+                                         width=110)
         self.canvas.pack(fill="both", expand=True)
 
         self._sync_filters()

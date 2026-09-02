@@ -10,6 +10,10 @@ from ui.text import truncate
 from ui.widgets import Tooltip
 from utils.clipboard import clip_set
 
+SERVERS_SASH_H = 6
+MIN_MEMBERS_H = 60
+MIN_SERVERS_H = 120
+
 
 class ServersView:
     def __init__(self, parent, ctx) -> None:
@@ -24,6 +28,10 @@ class ServersView:
 
         body = ctk.CTkFrame(root, fg_color="transparent")
         body.pack(fill="both", expand=True, padx=theme.PAD_PANEL, pady=(0, 12))
+        body.grid_rowconfigure(0, weight=1)
+        body.grid_rowconfigure(1, weight=1)
+        body.grid_rowconfigure(2, weight=0, minsize=SERVERS_SASH_H)
+        body.grid_columnconfigure(0, weight=1)
 
         self.search_var = tk.StringVar()
         self.search_var.trace_add("write", lambda *a: self._on_search())
@@ -31,24 +39,42 @@ class ServersView:
                                          placeholder_text="🔍  Search Servers…", height=32,
                                          corner_radius=theme.RADIUS_CTRL, fg_color=theme.BG, border_width=0,
                                          font=ctx.fonts["normal"])
-        self.search_entry.pack(fill="x", pady=(0, 8))
+        self.search_entry.grid(row=0, column=0, sticky="ew", pady=(0, 8))
 
         self.server_list = ctk.CTkScrollableFrame(body, fg_color=theme.BG, corner_radius=theme.RADIUS_PANEL)
-        self.server_list.pack(fill="both", expand=True)
+        self.server_list.grid(row=1, column=0, sticky="nsew")
 
         self.server_info_label = ctk.CTkLabel(body, text="", font=ctx.fonts["caption"],
                                               text_color=theme.SEC, anchor="w")
-        self.server_info_label.pack(fill="x", pady=(8, 2))
+        self.server_info_label.grid(row=1, column=0, sticky="sw", pady=(6, 0))
+
+        self.members_sash = ctk.CTkFrame(body, height=SERVERS_SASH_H, fg_color=theme.HOVER,
+                                         cursor="sb_v_double_arrow")
+        self.members_sash.grid(row=2, column=0, sticky="ew", pady=(8, 6))
+        self.members_sash.bind("<ButtonPress-1>", self._members_press)
+        self.members_sash.bind("<B1-Motion>", self._members_drag)
+        self.members_sash.bind("<ButtonRelease-1>", self._members_release)
+        self.members_sash.bind("<Double-Button-1>", self._members_reset)
 
         self.members_toggle = ctk.CTkButton(body, text="▸ Members", height=26, font=ctx.fonts["caption"],
                                             fg_color=theme.HOVER, hover_color=ctx.accent_hover,
                                             command=self.toggle_members)
-        self.members_toggle.pack(fill="x", pady=(0, 2))
+        self.members_toggle.grid(row=3, column=0, sticky="ew", pady=(0, 2))
         self.server_members = ctk.CTkScrollableFrame(body, fg_color=theme.BG,
-                                                     corner_radius=theme.RADIUS_PANEL, height=0)
-        self.server_members.pack(fill="x")
+                                                     corner_radius=theme.RADIUS_PANEL,
+                                                     height=self.members_height)
 
         self._debounce = None
+        self._members_drag_active = None
+        self._members_h = self.members_height
+        self._apply_members_layout()
+
+    @property
+    def members_height(self) -> int:
+        state = self.ctx.state
+        if getattr(state, "members_split", None):
+            return state.members_split
+        return 158
 
     def pack(self, *args, **kwargs) -> None:
         self._frame.pack(*args, **kwargs)
@@ -158,10 +184,13 @@ class ServersView:
         tokens = data.get("tokens", []) if data else []
         if self.ctx.state.members_collapsed:
             self.members_toggle.configure(text=f"▸  Members ({len(tokens)})")
-            self.server_members.pack_forget()
+            self.server_members.grid_forget()
+            self.members_sash.grid_forget()
             return
         self.members_toggle.configure(text=f"▾  Members ({len(tokens)})")
-        self.server_members.pack(fill="x")
+        self.members_sash.grid(row=2, column=0, sticky="ew", pady=(8, 6))
+        self.server_members.grid(row=3, column=0, sticky="nsew")
+        self._apply_members_layout()
         if not tokens:
             ctk.CTkLabel(self.server_members, text="No tokens", font=self.ctx.fonts["caption"],
                          text_color=theme.MUTED).pack(pady=8)
@@ -174,6 +203,49 @@ class ServersView:
             ctk.CTkButton(row, text="Select", width=60, height=22, font=self.ctx.fonts["caption"],
                           fg_color=theme.HOVER, hover_color=self.ctx.accent_hover,
                           command=lambda t=m["token"]: self._select_member(t)).grid(row=0, column=1, pady=3)
+
+    # ---- vertical members splitter ---------------------------------------------
+    def _members_press(self, event) -> None:
+        self._members_drag_active = self._frame.winfo_pointery()
+
+    def _members_drag(self, event) -> None:
+        if self._members_drag_active is None:
+            return
+        delta = self._frame.winfo_pointery() - self._members_drag_active
+        if delta == 0:
+            return
+        self._members_drag_active = self._frame.winfo_pointery()
+        self._adjust_members_height(delta)
+
+    def _members_release(self, _event=None) -> None:
+        self._members_drag_active = None
+        self._persist_members_height()
+
+    def _members_reset(self, _event=None) -> None:
+        self._members_drag_active = None
+        self._members_h = 158
+        self._apply_members_layout()
+        self._persist_members_height()
+
+    def _adjust_members_height(self, delta: int) -> None:
+        self._members_h = int(max(MIN_MEMBERS_H, self._members_h + delta))
+        self._apply_members_layout()
+
+    def _apply_members_layout(self) -> None:
+        total = self._frame.winfo_height()
+        if total > 0:
+            limit = total - MIN_SERVERS_H
+            if self._members_h > limit:
+                self._members_h = max(MIN_MEMBERS_H, limit)
+        self.members_toggle.grid(row=3, column=0, sticky="ew", pady=(0, 2))
+        self.server_members.grid(row=4, column=0, sticky="ew")
+        self.server_members.configure(height=self._members_h)
+
+    def _persist_members_height(self) -> None:
+        try:
+            self.ctx.state.members_split = self._members_h
+        except Exception:
+            pass
 
     def _select_member(self, token) -> None:
         self.ctx.state.selected.add(token)

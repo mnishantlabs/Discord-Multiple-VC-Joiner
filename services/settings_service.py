@@ -76,6 +76,18 @@ class SettingsService:
     def recent_voice(self) -> list[dict[str, Any]]:
         return list(self._repo.get("recent_voice", []) or [])
 
+    @property
+    def columns_layout(self) -> list[float] | None:
+        value = self._repo.get("layout_columns")
+        if value and len(value) == 3 and all(
+                isinstance(x, (int, float)) and x > 0 for x in value):
+            return [float(x) for x in value]
+        return None
+
+    def set_columns_layout(self, fractions: list[float]) -> None:
+        self._repo.set("layout_columns", [round(float(f), 4) for f in fractions])
+        self._repo.save()
+
     def set_geometry(self, geometry: str) -> None:
         self._repo.set("geometry", geometry)
         self._repo.save()

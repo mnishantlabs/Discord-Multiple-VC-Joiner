@@ -30,16 +30,19 @@ from storage.token_repository import TokenRepository
 from ui import theme
 from utils.asyncs import AsyncBridge
 
-SERVERS_REBUILD_TOPIC = "servers.rebuild"
-
 # Adaptive sizing: the window shrinks to fit whatever screen it opens on.
 DEFAULT_SIZE = (1380, 880)
 MIN_SIZE = (760, 580)
 
-# Flex weights for the three body columns (tokens / servers / voice). The
-# server list is the primary workspace, so it gets the widest share.
-COLUMN_WEIGHTS = (26, 44, 30)
-COLUMN_MINSIZES = (210, 300, 250)
+# Resizable three-column layout. Panes are placed in grid columns
+# 0 / 2 / 4 with a thin draggable sash in columns 1 / 3. Each pane keeps a
+# minimum width and the user's proportions persist between sessions.
+SASH_W = 6
+MIN_ACCOUNTS = 170
+MIN_SERVERS = 210
+MIN_VOICE = 170
+PANE_MINS = (MIN_ACCOUNTS, MIN_SERVERS, MIN_VOICE)
+DEFAULT_PANE_FRACS = (0.27, 0.44, 0.29)
 
 # Font size levels used by `_font_scale()`.
 FONT_SIZES = {0: 12, 1: 13, 2: 15}
@@ -206,16 +209,133 @@ class MainWindow(ctk.CTk):
         y = max(0, (sh - h) // 3)
         return f"{w}x{h}+{x}+{y}"
 
-    def _secondary_column_width(self) -> int:
-        """Width for the servers/voice columns: a fixed share of the body so
-        the token manager always gets the remaining (widest) space."""
-        geom = self.geometry().split("+", 1)[0].lower()
+    def _load_pane_fracs(self) -> list[float]:
+        fracs = self.ctx.settings.columns_layout
+        if fracs is None:
+            return list(DEFAULT_PANE_FRACS)
+        total = sum(fracs)
+        return [f / total for f in fracs]
+
+    def _make_sash(self, index: int) -> tk.Frame:
+        """A thin vertical grab bar between panes. Click-drag resizes;
+        double-click resets to the default layout."""
+        sash = frame(self._body, color=theme.HOVER)
+        sash.configure(cursor="sb_h_double_arrow")
+        sash._sash_index = index
+        sash.bind("<ButtonPress-1>", self._sash_press)
+        sash.bind("<B1-Motion>", self._sash_drag)
+        sash.bind("<ButtonRelease-1>", self._sash_release)
+        sash.bind("<Double-Button-1>", self._sash_reset)
+        return sash
+
+    def _sash_press(self, event) -> None:
+        self._drag = {
+            "index": getattr(event.widget, "_sash_index", 0),
+            "start_x": self._body.winfo_pointerx(),
+            "fracs": list(self._pane_fracs),
+            "moved": False,
+        }
+
+    def _sash_drag(self, event) -> None:
+        if not self._drag:
+            return
+        started = self._drag["start_x"]
+        delta = (self._body.winfo_pointerx() - started) / max(1, self._body.winfo_width())
+        self._drag["moved"] = True
+        self._apply_delta(self._drag["index"], self._drag["fracs"], delta)
+
+    def _sash_release(self, _event=None) -> None:
+        if not self._drag:
+            return
+        if self._drag["moved"]:
+            self._place_panes()
+            self._persist_pane_fracs()
+        self._drag = None
+
+    def _sash_reset(self, _event=None) -> None:
+        self._drag = None
+        self._pane_fracs = list(DEFAULT_PANE_FRACS)
+        self._place_panes()
+        self._persist_pane_fracs()
+
+    def _apply_delta(self, index: int, base, delta: float) -> None:
+        """Shift the divider: pane ``index`` grows, ``index+1`` shrinks, with
+        per-pane minimum widths clamped on the body's real width."""
+        bw = self._body.winfo_width()
+        total_avail = bw - 2 * SASH_W
+        mins = list(PANE_MINS)
+
+        fracs = list(base)
+        p0 = max(mins[index] / total_avail, min(0.999, fracs[index] + delta))
+        p1 = fracs[index + 1] - (p0 - fracs[index])
+        if p1 < mins[index + 1] / total_avail:
+            p1 = mins[index + 1] / total_avail
+            p0 = fracs[index] + fracs[index + 1] - p1
+        fracs[index] = p0
+        fracs[index + 1] = p1
+        self._pane_fracs = fracs
+        self._place_panes()
+
+    def _on_body_configure(self, _event=None) -> None:
+        if self._drag:
+            return
+        if getattr(self, "_layout_guard", False):
+            return
+        self._layout_guard = True
         try:
-            win_w = int(geom.split("x")[0])
+            self._place_panes()
+        finally:
+            self._layout_guard = False
+
+    def _applied_widths(self):
+        return [int(f.winfo_width()) for f in self._panes]
+
+    def _compute_widths(self, body_w: int) -> list[int]:
+        """Three pane widths (plus sashes) from the user's fractions, clamped
+        to per-pane minimums that sum to the available body width."""
+        total_avail = max(1, body_w - 2 * SASH_W)
+        mins = list(PANE_MINS)
+        fracs = self._pane_fracs
+        widths = [int(total_avail * f / max(1.0, sum(fracs))) for f in fracs]
+        for i in range(3):
+            if widths[i] < mins[i]:
+                width_i = mins[i]
+                j = max((k for k in range(3) if k != i),
+                        key=lambda k: widths[k] - mins[k])
+                deficit = width_i - widths[i]
+                widths[i] = width_i
+                widths[j] -= deficit
+        surplus = sum(widths) - total_avail
+        if surplus > 0:
+            widths[max(range(3), key=lambda k: widths[k])] -= surplus
+        for i in range(3):
+            widths[i] = max(mins[i], widths[i])
+        return [int(w) for w in widths]
+
+    def _place_panes(self) -> None:
+        """Exact geometry via .place() — fully controls each pane's width
+        regardless of the requested size of its children. Idempotent: no-op
+        when the pane widths are already correct."""
+        bw = self._body.winfo_width()
+        if bw <= 0:
+            return
+        widths = self._compute_widths(bw)
+        if widths == self._applied_widths():
+            return
+        heights = self._body.winfo_height()
+        x = 0
+        for i in range(3):
+            if i > 0:
+                self._sashes[i - 1].place(x=x, y=0, width=SASH_W, height=heights)
+                x += SASH_W
+            self._panes[i].place(x=x, y=0, width=widths[i], height=heights)
+            x += widths[i]
+
+    def _persist_pane_fracs(self) -> None:
+        try:
+            self.ctx.settings.set_columns_layout(self._pane_fracs)
         except Exception:
-            win_w = DEFAULT_SIZE[0]
-        body = win_w - 2 * theme.PAD_OUTER
-        return max(240, min(340, int(body * 0.22)))
+            pass
 
     def _create_views(self) -> None:
         from ui.views.toolbar import ToolbarView
@@ -235,20 +355,28 @@ class MainWindow(ctk.CTk):
         self.stats = StatsBarView(stats_holder, self.ctx)
         self.stats.pack(fill="x")
 
-        body = frame(self)
-        body.pack(fill="both", expand=True, padx=theme.PAD_OUTER, pady=4)
-        for col, (weight, minsize) in enumerate(zip(COLUMN_WEIGHTS, COLUMN_MINSIZES)):
-            body.grid_columnconfigure(col, weight=weight, minsize=minsize)
-        body.grid_rowconfigure(0, weight=1)
-        self.tokens_view = TokensView(body, self.ctx)
-        self.servers_view = ServersView(body, self.ctx)
-        self.voice_view = VoiceView(body, self.ctx)
+        self._body = frame(self)
+        self._body.pack(fill="both", expand=True, padx=theme.PAD_OUTER, pady=4)
+
+        self._pane_fracs = self._load_pane_fracs()
+        self._drag = None
+
+        self._holders = [frame(self._body) for _ in range(3)]
+        self.tokens_view = TokensView(self._holders[0], self.ctx)
+        self.servers_view = ServersView(self._holders[1], self.ctx)
+        self.voice_view = VoiceView(self._holders[2], self.ctx)
+        self.tokens_view.pack(fill="both", expand=True, in_=self._holders[0])
+        self.servers_view.pack(fill="both", expand=True, in_=self._holders[1])
+        self.voice_view.pack(fill="both", expand=True, in_=self._holders[2])
         self.ctx.tokens_view = self.tokens_view
         self.ctx.servers_view = self.servers_view
         self.ctx.voice_view = self.voice_view
-        self.tokens_view.grid(row=0, column=0, sticky="nsew", padx=4)
-        self.servers_view.grid(row=0, column=1, sticky="nsew", padx=4)
-        self.voice_view.grid(row=0, column=2, sticky="nsew", padx=4)
+
+        self._panes = self._holders
+        self._sashes = [self._make_sash(0), self._make_sash(1)]
+
+        self._body.bind("<Configure>", self._on_body_configure)
+        self._place_panes()
 
         self.actions = ActionsBarView(self, self.ctx)
         self.actions.pack(fill="x", padx=theme.PAD_OUTER, pady=(0, 10))
@@ -269,7 +397,6 @@ class MainWindow(ctk.CTk):
         self.ctx.bus.subscribe(VALIDATION_PROGRESS, lambda p: self._on_validation(p))
         self.ctx.bus.subscribe(VALIDATION_PROGRESS, lambda _p: self.stats.set_validating(True))
         self.ctx.bus.subscribe(VOICE_STATE_CHANGED, lambda _: self.status.render())
-        self.ctx.bus.subscribe(SERVERS_REBUILD_TOPIC, lambda _: self.servers_view.rebuild())
 
     def _on_validation(self, payload) -> None:
         self._update_validation_progress(payload)

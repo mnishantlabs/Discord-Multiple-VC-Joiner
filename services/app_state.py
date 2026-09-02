@@ -31,6 +31,7 @@ class AppState:
         self.selected_channel: dict[str, Any] | None = None
         self.channels: list[dict[str, Any]] = []
         self.members_collapsed: bool = True
+        self.members_split: int = 158
         self.log_filter: str = "all"
         self.log_pause: bool = False
 

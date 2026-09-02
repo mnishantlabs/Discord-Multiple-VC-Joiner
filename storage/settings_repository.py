@@ -29,6 +29,7 @@ DEFAULTS: dict[str, Any] = {
     "recent_voice": [],
     "geometry": "",
     "compact": False,
+    "layout_columns": [],
 }
 
 
