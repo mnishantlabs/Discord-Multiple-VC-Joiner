@@ -11,7 +11,9 @@ details live in each view class.
 """
 
 import threading
+import sys
 import tkinter as tk
+from pathlib import Path
 
 import customtkinter as ctk
 
@@ -167,6 +169,20 @@ class MainWindow(ctk.CTk):
         # underlying repository.
         return self.settings._repo
 
+    def _resource(self, name: str) -> str:
+        """Resolve a bundled asset path (data dir for PyInstaller)."""
+        base = getattr(sys, "_MEIPASS", str(Path(__file__).resolve().parent.parent.parent))
+        return str(Path(base) / name)
+
+    def _set_window_icon(self) -> None:
+        try:
+            self.iconbitmap(self._resource("app_icon.ico"))
+        except Exception:
+            try:
+                self.iconbitmap(self._resource("icon.ico"))
+            except Exception:
+                pass
+
     def _schedule_main(self, thunk) -> None:
         try:
             if self.winfo_exists():
@@ -177,6 +193,7 @@ class MainWindow(ctk.CTk):
     def _configure_window(self) -> None:
         self.configure(fg_color=theme.BG)
         self.title("Discord Token Manager")
+        self._set_window_icon()
         sw, sh = self.winfo_screenwidth(), self.winfo_screenheight()
         saved = self.ctx.settings.geometry
         if saved and self._geometry_fits(saved, sw, sh):

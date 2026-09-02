@@ -11,7 +11,7 @@ a = Analysis(
     ["main.py"],
     pathex=["."],
     binaries=ctk_binaries,
-    datas=ctk_datas,
+    datas=ctk_datas + [("assets/icon.ico", ".")],
     hiddenimports=HIDDEN_IMPORTS,
     hookspath=[],
     hooksconfig={},

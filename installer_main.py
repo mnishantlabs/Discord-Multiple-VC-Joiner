@@ -146,6 +146,7 @@ class Installer(tk.Tk):
         self.title(TITLE)
         self.resizable(False, False)
         self.geometry("580x400")
+        self._set_window_icon()
         self.selected = tk.StringVar(value=str(default_install_dir()))
         self.desktop_chk = tk.BooleanVar(value=False)
         self.start_chk = tk.BooleanVar(value=True)
@@ -153,6 +154,18 @@ class Installer(tk.Tk):
         self._page = 0
         self._build_ui()
         self._show_page(0)
+
+    def _set_window_icon(self) -> None:
+        """Set the window/taskbar icon from the bundled .ico (if present)."""
+        base = getattr(sys, "_MEIPASS", str(Path.cwd()))
+        for name in ("icon.ico", "app_icon.ico"):
+            candidate = Path(base) / name
+            if candidate.exists():
+                try:
+                    self.iconbitmap(str(candidate))
+                    return
+                except Exception:
+                    continue
 
     def _build_ui(self) -> None:
         self.content = tk.Frame(self)
