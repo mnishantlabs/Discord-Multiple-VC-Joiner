@@ -46,21 +46,8 @@ kbd {
   border-bottom: 1px solid var(--border);
 }
 .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 60px; }
-.brand { font-weight: 700; color: var(--text); font-size: 1.05rem; }
+.brand { font-weight: 700; color: var(--text); font-size: 1.05rem; display: flex; align-items: center; }
 .brand span { color: var(--text); }
-.logo {
-  display: inline-block;
-  width: 30px; height: 30px;
-  line-height: 30px;
-  text-align: center;
-  border-radius: 8px;
-  background: var(--accent);
-  color: #fff;
-  font-weight: 800;
-  font-size: 1rem;
-  vertical-align: -7px;
-  margin-right: 8px;
-}
 .nav nav a { margin-left: 22px; color: var(--muted); font-size: 0.95rem; }
 .nav nav a:hover { color: var(--text); text-decoration: none; }
 

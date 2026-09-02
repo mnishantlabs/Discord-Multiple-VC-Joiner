@@ -145,70 +145,157 @@ class Installer(tk.Tk):
         super().__init__()
         self.title(TITLE)
         self.resizable(False, False)
-        self.geometry("560x340")
+        self.geometry("580x400")
         self.selected = tk.StringVar(value=str(default_install_dir()))
         self.desktop_chk = tk.BooleanVar(value=False)
         self.start_chk = tk.BooleanVar(value=True)
         self.install_dir = installed_dir()
-        self._build()
-        self._route()
+        self._page = 0
+        self._build_ui()
+        self._show_page(0)
 
-    def _build(self) -> None:
-        pad = {"padx": 20, "pady": 8}
-        tk.Label(self, text=TITLE, font=("Segoe UI", 14, "bold"),
-                 anchor="w").pack(fill="x", **pad)
-        self.info = tk.Label(self, text="", font=("Segoe UI", 10),
-                             anchor="w", justify="left", wraplength=520)
-        self.info.pack(fill="x", **pad)
+    def _build_ui(self) -> None:
+        self.content = tk.Frame(self)
+        self.content.pack(fill="both", expand=True)
+        self.steps = [self._make_step1(), self._make_step2(), self._make_step3()]
+        self._show_step_indicator()
+        self.buttons_frame = tk.Frame(self)
+        self.buttons_frame.pack(fill="x", side="bottom", padx=20, pady=(4, 12))
+        self._show_buttons()
 
-        row = tk.Frame(self)
-        row.pack(fill="x", **pad)
-        tk.Entry(row, textvariable=self.selected, width=44).pack(
-            side="left", ipady=2)
-        tk.Button(row, text="Browse…", command=self._choose).pack(
-            side="left", padx=(8, 0))
-
-        self.opts = tk.Frame(self)
-        self.opts.pack(fill="x", **pad)
-        tk.Checkbutton(self.opts, text="Start Menu shortcuts",
-                       variable=self.start_chk).pack(anchor="w")
-        tk.Checkbutton(self.opts, text="Desktop shortcut",
-                       variable=self.desktop_chk).pack(anchor="w")
-
-        self.progress = ttk.Progressbar(self, length=520, mode="determinate")
-        self.progress.pack(fill="x", **pad)
-
-        self.status = tk.Label(self, text="", font=("Segoe UI", 9),
-                               foreground="#666", anchor="w")
-        self.status.pack(fill="x", **pad)
-
-        self.buttons = tk.Frame(self)
-        self.buttons.pack(fill="x", side="bottom", **pad)
-        self.cancel = tk.Button(self.buttons, text="Close",
-                                command=self.destroy)
-        self.cancel.pack(side="right")
-
-    def _route(self) -> None:
+    def _make_step1(self) -> tk.Frame:
+        f = tk.Frame(self.content)
+        f.columnconfigure(0, weight=1)
+        tk.Label(f, text=TITLE, font=("Segoe UI", 14, "bold"),
+                 anchor="w").grid(row=0, column=0, sticky="w", padx=20, pady=(12, 4))
         if self.install_dir:
-            self.info.configure(
-                text=f"Discord Token Manager is already installed in:\n"
-                     f"{self.install_dir}\n\n"
-                     f"Choose an action below.")
-            self.buttons = tk.Frame(self)
-            self.buttons.pack(fill="x", pady=(4, 12))
-            tk.Button(self.buttons, text="Uninstall", fg="white",
-                      bg="#d9534f", command=self._uninstall).pack(side="right")
-            tk.Button(self.buttons, text="Reinstall / repair", width=18,
-                      command=self._install).pack(side="right", padx=(0, 8))
+            tk.Label(f, text=(
+                f"Discord Token Manager is already installed in:\n"
+                f"{self.install_dir}\n\n"
+                f"Choose an action below."
+            ), font=("Segoe UI", 10), anchor="w", justify="left",
+                wraplength=540).grid(row=1, column=0, sticky="w", padx=20, pady=(4, 0))
         else:
-            self.info.configure(
-                text=f"Installs Discord Token Manager to:\n{self.selected.get()}\n\n"
-                     f"All data (tokens, settings) is stored in your user "
-                     f"profile, so reinstalling never loses anything.")
-            self.opts.pack()
-            self.cancel.configure(text="Cancel")
-            tk.Button(self.buttons, text="Install", width=14, bg="#2f81f7",
-                      fg="white", command=self._install).pack(side="right", padx=(0, 8))
+            tk.Label(f, text=(
+                "This wizard will install Discord Token Manager on your computer.\n\n"
+                "Click Next to continue."
+            ), font=("Segoe UI", 10), anchor="w", justify="left",
+                wraplength=540).grid(row=1, column=0, sticky="w", padx=20, pady=(4, 0))
+        return f
+
+    def _make_step2(self) -> tk.Frame:
+        f = tk.Frame(self.content)
+        f.columnconfigure(0, weight=1)
+        tk.Label(f, text="Choose Install Location",
+                 font=("Segoe UI", 12, "bold"),
+                 anchor="w").grid(row=0, column=0, sticky="w", padx=20, pady=(12, 4))
+        tk.Label(f, text="Select the folder where Discord Token Manager will "
+                 "be installed:",
+                 font=("Segoe UI", 10),
+                 anchor="w").grid(row=1, column=0, sticky="w", padx=20)
+        row = tk.Frame(f)
+        row.grid(row=2, column=0, sticky="ew", padx=20, pady=(8, 12))
+        row.columnconfigure(0, weight=1)
+        tk.Entry(row, textvariable=self.selected, width=44).grid(
+            row=0, column=0, sticky="ew")
+        tk.Button(row, text="Browse…", command=self._choose).grid(
+            row=0, column=1, padx=(8, 0))
+        tk.Label(f, text="Additional Options:",
+                 font=("Segoe UI", 10, "bold"),
+                 anchor="w").grid(row=3, column=0, sticky="w", padx=20, pady=(4, 0))
+        tk.Checkbutton(f, text="Create Start Menu shortcuts",
+                       variable=self.start_chk).grid(
+            row=4, column=0, sticky="w", padx=40)
+        tk.Checkbutton(f, text="Create Desktop shortcut",
+                       variable=self.desktop_chk).grid(
+            row=5, column=0, sticky="w", padx=40, pady=(0, 8))
+        return f
+
+    def _make_step3(self) -> tk.Frame:
+        f = tk.Frame(self.content)
+        f.columnconfigure(0, weight=1)
+        self.title_label = tk.Label(f, text="Installing…",
+                                    font=("Segoe UI", 12, "bold"),
+                                    anchor="w")
+        self.title_label.grid(row=0, column=0, sticky="w", padx=20, pady=(12, 4))
+        self.info = tk.Label(f, text="", font=("Segoe UI", 10),
+                             anchor="w", justify="left", wraplength=540)
+        self.info.grid(row=1, column=0, sticky="w", padx=20, pady=(4, 0))
+        self.progress = ttk.Progressbar(f, length=520, mode="determinate")
+        self.progress.grid(row=2, column=0, sticky="ew", padx=20, pady=(12, 4))
+        self.status = tk.Label(f, text="", font=("Segoe UI", 9),
+                               foreground="#666", anchor="w")
+        self.status.grid(row=3, column=0, sticky="w", padx=20)
+        return f
+
+    def _show_step_indicator(self) -> None:
+        frame = tk.Frame(self)
+        frame.pack(fill="x", padx=20, pady=(12, 0))
+        if self.install_dir:
+            labels = ["Welcome", "Install"]
+            self._step_pages = [0, 2]
+        else:
+            labels = ["Welcome", "Options", "Install"]
+            self._step_pages = [0, 1, 2]
+        self.step_dots = []
+        for i, label in enumerate(labels):
+            step_page = self._step_pages[i]
+            color = "#2f81f7" if step_page <= self._page else "#bbb"
+            dot = tk.Label(frame, text=f"● {label}", font=("Segoe UI", 9),
+                           fg=color, padx=8)
+            dot.pack(side="left")
+            self.step_dots.append(dot)
+
+    def _update_step_indicator(self) -> None:
+        for i, dot in enumerate(self.step_dots):
+            step_page = self._step_pages[i]
+            color = "#2f81f7" if step_page <= self._page else "#bbb"
+            dot.configure(fg=color)
+
+    def _show_buttons(self) -> None:
+        for w in self.buttons_frame.winfo_children():
+            w.destroy()
+        btn_style = {"font": ("Segoe UI", 10), "width": 12}
+        if self._page == 0:
+            tk.Button(self.buttons_frame, text="Cancel",
+                      command=self.destroy, **btn_style).pack(side="right", padx=4)
+            if self.install_dir:
+                tk.Button(self.buttons_frame, text="Reinstall / Repair",
+                          command=self._start_install, width=18,
+                          **btn_style).pack(side="right", padx=4)
+                tk.Button(self.buttons_frame, text="Uninstall",
+                          bg="#d9534f", fg="white",
+                          command=self._uninstall, **btn_style).pack(
+                              side="right", padx=4)
+            else:
+                tk.Button(self.buttons_frame, text="Next  ▸",
+                          bg="#2f81f7", fg="white",
+                          command=lambda: self._show_page(1), **btn_style).pack(
+                              side="right", padx=4)
+        elif self._page == 1:
+            tk.Button(self.buttons_frame, text="Cancel",
+                      command=self.destroy, **btn_style).pack(side="right", padx=4)
+            tk.Button(self.buttons_frame, text="Next  ▸",
+                      bg="#2f81f7", fg="white",
+                      command=lambda: self._start_install(), **btn_style).pack(
+                          side="right", padx=4)
+            tk.Button(self.buttons_frame, text="◂ Back",
+                      command=lambda: self._show_page(0), **btn_style).pack(
+                          side="right", padx=4)
+        elif self._page == 2:
+            tk.Button(self.buttons_frame, text="Cancel",
+                      command=self.destroy, state="disabled",
+                      **btn_style).pack(side="right", padx=4)
+
+    def _show_page(self, page: int) -> None:
+        self._page = page
+        for i, step in enumerate(self.steps):
+            step.grid_forget()
+        self.steps[page].grid(row=0, column=0, sticky="nsew")
+        self.content.grid_rowconfigure(0, weight=1)
+        self.content.grid_columnconfigure(0, weight=1)
+        self._update_step_indicator()
+        self._show_buttons()
 
     def _choose(self) -> None:
         d = filedialog.askdirectory(initialdir=self.selected.get(),
@@ -216,11 +303,19 @@ class Installer(tk.Tk):
         if d:
             self.selected.set(d)
 
+    def _set_busy(self, busy: bool) -> None:
+        state = "disabled" if busy else "normal"
+        for w in self.buttons_frame.winfo_children():
+            try:
+                w.configure(state=state)
+            except Exception:
+                pass
+
     def _step(self, value: int) -> None:
         self.progress["value"] = value
         self.update_idletasks()
 
-    def _install(self) -> None:
+    def _start_install(self) -> None:
         dest = Path(self.selected.get())
         try:
             dest.mkdir(parents=True, exist_ok=True)
@@ -233,6 +328,9 @@ class Installer(tk.Tk):
                                  "Payload missing. Please run from the "
                                  "official setup package.")
             return
+        self.info.configure(
+            text=f"Installing Discord Token Manager to:\n{dest}")
+        self._show_page(2)
         self._set_busy(True)
         files = [p for p in src.rglob("*")]
         total = max(len(files), 1)
@@ -247,8 +345,6 @@ class Installer(tk.Tk):
             if i % max(1, total // 40) == 0:
                 self._step(int(i / total * 100))
                 self.status.configure(text=f"Copying {rel}…")
-        # Belts and braces: keep a copy of the payload so a repaired install
-        # that is missing _internal can be restored from the same volume.
         self._step(100)
         self.status.configure(text="Creating shortcuts…")
         try:
@@ -257,7 +353,13 @@ class Installer(tk.Tk):
         except Exception as exc:
             print(f"[installer] shortcuts/registry failed: {exc}")
         self.status.configure(text="Done")
+        self.title_label.configure(text="Installation Complete!")
         self._set_busy(False)
+        for w in self.buttons_frame.winfo_children():
+            w.destroy()
+        btn_style = {"font": ("Segoe UI", 10), "width": 12}
+        tk.Button(self.buttons_frame, text="Close",
+                  command=self.destroy, **btn_style).pack(side="right", padx=4)
         if messagebox.askyesno("Setup",
                                "Installation complete.\n\nLaunch Discord "
                                "Token Manager now?"):
@@ -272,7 +374,6 @@ class Installer(tk.Tk):
             return
         dest = self.install_dir
         self._set_busy(True)
-        self.status.configure(text="Removing…")
         remove_shortcuts(dest or Path())
         _remove_registry()
         if dest:
@@ -280,15 +381,6 @@ class Installer(tk.Tk):
         self._set_busy(False)
         messagebox.showinfo("Setup", "Discord Token Manager was removed.")
         self.destroy()
-
-    def _set_busy(self, busy: bool) -> None:
-        state = "disabled" if busy else "normal"
-        for w in self.winfo_children():
-            try:
-                if isinstance(w, tk.Button):
-                    w.configure(state=state)
-            except Exception:
-                pass
 
 
 def main() -> None:
