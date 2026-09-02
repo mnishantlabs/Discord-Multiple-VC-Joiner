@@ -6,7 +6,7 @@ from ui.widgets.icon_button import IconButton
 from ui.widgets.stat_card import StatCard, StatBar
 from ui.widgets.filter_pill import FilterPill
 from ui.widgets.button_list import ButtonList
-from ui.widgets.token_card import TokenCard
+from ui.widgets.token_card import TokenCard, build_token_tooltip
 from ui.widgets.virtual_list import VirtualList
 
 __all__ = [
@@ -17,5 +17,6 @@ __all__ = [
     "FilterPill",
     "ButtonList",
     "TokenCard",
+    "build_token_tooltip",
     "VirtualList",
 ]

@@ -25,7 +25,7 @@ class AppState:
         self._lock = threading.RLock()
         self.selected: set[str] = set()
         self.anchor: str | None = None
-        self.filters: dict[str, bool] = {k: True for k in _CATEGORY_VALUES}
+        self.view_filter: str = "all"  # "all" | "valid" | "invalid"
         self.collapsed_groups: dict[str, bool] = {k: False for k in _CATEGORY_VALUES}
         self.selected_server: dict[str, Any] | None = None
         self.selected_channel: dict[str, Any] | None = None

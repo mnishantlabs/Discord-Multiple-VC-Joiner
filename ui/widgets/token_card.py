@@ -1,23 +1,37 @@
-"""A single token card component.
+"""A single compact token row component.
 
-Ports the old ``App._render_token_card`` (main.py:738) faithfully: status
-dot, username + badges, server count, snippet ID, a checkbox, and the four
-event bindings (click / right-click / double-click / middle-click). The card
-renders from an opaque ``info`` dict so the component stays domain-agnostic
-and the actual commands are injected by the caller.
+Replaces the old multi-line card (detail rows, checkbox, id snippet) with a
+dense file-manager style row:
+
+    🟢 yoruarc#0  [📱][⭐]         60 Servers
+
+One click selects (accent border + tinted background, no checkbox), badges
+(phone / nitro) are tiny glyphs, and double-click opens the Properties dialog.
+The height follows the selected UI density: comfortable / compact / ultra.
 """
 
 import tkinter as tk
 
 import customtkinter as ctk
 
-from ui.theme import CARD, ACCENT, ACCENT_HOVER, DOT_VALID, DOT_INVALID, DOT_LOCKED, TXT, SEC, MUTED
+from ui.text import truncate
+from ui.theme import (
+    CARD,
+    TXT,
+    SEC,
+    blend,
+    accent_hover_hex,
+    selected_bg,
+)
 from ui.widgets.tooltip import Tooltip
 from utils.platform import MOD_CTRL, MOD_SHIFT
 
+# Density -> row height (px).
+CARD_HEIGHTS = {"comfortable": 72, "compact": 58, "ultra": 40}
+
 
 class TokenCard:
-    """Builds and packs one token row into *parent*; returns the frame."""
+    """Builds and packs one compact token row into *parent*; returns the frame."""
 
     def __init__(
         self,
@@ -28,14 +42,12 @@ class TokenCard:
         accent: str,
         accent_hover: str,
         show_badges: bool,
-        show_ids: bool,
-        compact: bool,
+        height: int,
         status_dot: str,
         on_click=None,          # (event, token)  shift/ctrl handled by caller
         on_context=None,        # (event, token)
-        on_rejoin=None,         # () on double-click
+        on_properties=None,     # () on double-click
         on_middle=None,         # () on middle-click
-        on_toggle=None,         # () checkbox
         username_text="",
     ):
         self._parent = parent
@@ -44,70 +56,65 @@ class TokenCard:
         self.selected = selected
         self.fonts = fonts
         self.show_badges = show_badges
-        self.show_ids = show_ids
-        self.compact = compact
-        self.accent = accent
-        self.accent_hover = accent_hover
+        self.height = height
         self.status_dot = status_dot
         self.on_click = on_click
         self.on_context = on_context
-        self.on_rejoin = on_rejoin
+        self.on_properties = on_properties
         self.on_middle = on_middle
-        self.on_toggle = on_toggle
         self.username_text = username_text
         self.frame = self._build()
 
     # -- rendering ----------------------------------------------------------------
     def _build(self):
-        height = 50 if self.compact else 130
-        card = ctk.CTkFrame(self._parent, fg_color=CARD, corner_radius=8, height=height)
+        two_line = self.height >= 62
+        accent_hover = accent_hover_hex(accent)
+        card = ctk.CTkFrame(self._parent, fg_color=selected_bg(accent) if self.selected else CARD,
+                            corner_radius=6, height=self.height)
         card.pack_propagate(False)
-        card.pack(fill="x", pady=3)
-        card.configure(border_width=2 if self.selected else 0,
-                       border_color=self.accent if self.selected else "transparent")
+        card.pack(fill="x", pady=2)
+        if self.selected:
+            card.configure(border_width=2, border_color=blend(accent, "#FFFFFF", 0.15))
 
         inner = ctk.CTkFrame(card, fg_color="transparent")
-        inner.pack(fill="both", padx=10, pady=6)
+        inner.pack(fill="both", padx=10, pady=2)
 
         ctk.CTkLabel(inner, text="●", text_color=self.status_dot,
-                     font=ctk.CTkFont(size=13)).pack(side="left", padx=(0, 8))
+                     font=ctk.CTkFont(size=12)).pack(side="left", padx=(0, 6))
 
         txt = ctk.CTkFrame(inner, fg_color="transparent")
         txt.pack(side="left", fill="x", expand=True)
         name_row = ctk.CTkFrame(txt, fg_color="transparent")
         name_row.pack(fill="x")
-        ctk.CTkLabel(name_row, text=self.username_text, font=self.fonts["normal"]).pack(side="left")
+        ctk.CTkLabel(name_row, text=truncate(self.username_text, 30), font=self.fonts["normal"],
+                    ).pack(side="left")
 
         if self.show_badges:
             for label, fg, bg in self._badges():
                 ctk.CTkLabel(name_row, text=label, font=self.fonts["caption"],
                              text_color=fg, fg_color=bg, corner_radius=4, padx=4).pack(side="left", padx=3)
 
-        ctk.CTkLabel(txt, text=f"{len(self.info.get('servers', []))} Servers",
-                     font=self.fonts["caption"], text_color=SEC, anchor="w").pack(anchor="w")
-        if self.show_ids:
-            uid = self.info.get("user_id", "?")
-            ctk.CTkLabel(txt, text=f"ID {str(uid)[:14]}...", font=self.fonts["caption"],
-                         text_color=MUTED, anchor="w").pack(anchor="w")
-
-        cb = ctk.CTkCheckBox(inner, text="", width=8,
-                             variable=tk.BooleanVar(value=self.selected),
-                             command=self.on_toggle, checkbox_width=18, checkbox_height=18,
-                             fg_color=ACCENT, hover_color=ACCENT_HOVER)
-        cb.pack(side="right", padx=2)
+        servers_line = f"{len(self.info.get('servers', []))} Servers"
+        if two_line:
+            ctk.CTkLabel(txt, text=servers_line, font=self.fonts["caption"],
+                         text_color=SEC, anchor="w").pack(anchor="w")
+        else:
+            ctk.CTkLabel(txt, text=servers_line, font=self.fonts["caption"],
+                         text_color=SEC).pack(side="right")
 
         # event bindings
+        bindings = [card, inner, txt, name_row]
         if self.on_click:
-            for w in (card, inner, txt, name_row):
+            for w in bindings:
                 w.bind("<Button-1>", self.on_click)
         if self.on_context:
-            for w in (card, inner, txt, name_row):
+            for w in bindings:
                 w.bind("<Button-3>", self.on_context)
-        if self.on_rejoin:
-            for w in (card, inner, txt, name_row):
-                w.bind("<Double-Button-1>", lambda e: self.on_rejoin())
+        if self.on_properties:
+            for w in bindings:
+                w.bind("<Double-Button-1>", lambda e: self.on_properties())
         if self.on_middle:
-            for w in (card, inner, txt, name_row):
+            for w in bindings:
                 w.bind("<Button-2>", lambda e: self.on_middle())
 
         return card
@@ -115,9 +122,7 @@ class TokenCard:
     def _badges(self):
         out = []
         if self.info.get("premium_type", 0) > 0:
-            out.append(("Nitro", "#B474F0", "#3A2E4A"))
-        if self.info.get("is_verified"):
-            out.append(("✔", "#7BD5FF", "#1E3A4A"))
+            out.append(("⭐", "#B474F0", "#3A2E4A"))
         if self.info.get("phone"):
             out.append(("📱", "#7BD5FF", "#1E3A4A"))
         return out
@@ -143,4 +148,4 @@ def build_token_tooltip(info: dict, username: str) -> str:
     return "\n".join(lines)
 
 
-__all__ = ["TokenCard", "build_token_tooltip", "MOD_CTRL", "MOD_SHIFT"]
+__all__ = ["TokenCard", "build_token_tooltip", "CARD_HEIGHTS", "MOD_CTRL", "MOD_SHIFT"]

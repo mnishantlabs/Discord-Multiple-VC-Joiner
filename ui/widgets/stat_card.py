@@ -8,7 +8,7 @@ from ui.theme import CARD, SEC, HOVER, GOOD
 class StatCard:
     """A small card showing an icon, a numeric value, and a label."""
 
-    def __init__(self, parent, icon, name, width=150, height=42, fonts=None):
+    def __init__(self, parent, icon, name, width=120, height=42, fonts=None):
         self.name = name
         card = ctk.CTkFrame(parent, width=width, height=height, corner_radius=8, fg_color=CARD)
         card.pack_propagate(False)
@@ -27,20 +27,26 @@ class StatCard:
         self._frame.pack(*args, **kwargs)
 
 
+# Below this width the validation progress block drops to its own row instead of
+# squeezing the stat cards.
+STACK_THRESHOLD = 980
+
+
 class StatBar:
-    """A horizontal row of StatCards plus a validation progress block."""
+    """A horizontal row of StatCards plus a validation progress block that
+    reflows onto its own row on narrow windows."""
 
     def __init__(self, parent, fonts, accent):
         self._parent = parent
         self._specs = [("👤", "Total Tokens"), ("✅", "Valid"), ("🖥", "Servers"), ("🎯", "Selected")]
+        self._cards_holder = ctk.CTkFrame(parent, fg_color="transparent")
         self.cards = {}
         for icon, name in self._specs:
-            card = StatCard(parent, icon, name, fonts=fonts)
+            card = StatCard(self._cards_holder, icon, name, fonts=fonts)
             card.pack(side="left", padx=4, expand=True, fill="both")
             self.cards[name] = card
 
         prog = ctk.CTkFrame(parent, fg_color=CARD, corner_radius=8, height=42)
-        prog.pack(side="left", padx=8, expand=True, fill="both")
         prog.pack_propagate(False)
         prow = ctk.CTkFrame(prog, fg_color="transparent")
         prow.pack(fill="x", expand=True, padx=12)
@@ -50,6 +56,27 @@ class StatBar:
         self.progress = ctk.CTkProgressBar(prog, height=6, corner_radius=3,
                                            fg_color=HOVER, progress_color=GOOD)
         self.progress.pack(fill="x", padx=12, pady=(0, 8))
+        self._prog = prog
+
+        self._side_by_side = True
+        self._apply_layout()
+        parent.bind("<Configure>", self._on_resize)
+
+    def _on_resize(self, event) -> None:
+        mode = event.width >= STACK_THRESHOLD
+        if mode != self._side_by_side:
+            self._side_by_side = mode
+            self._apply_layout()
+
+    def _apply_layout(self) -> None:
+        if self._side_by_side:
+            self._cards_holder.pack(side="left", fill="x", expand=True)
+            self._prog.pack(side="left", padx=8, expand=True, fill="both")
+        else:
+            self._cards_holder.pack_forget()
+            self._prog.pack_forget()
+            self._cards_holder.pack(fill="x")
+            self._prog.pack(fill="x", pady=(6, 0))
 
     def set_stats(self, total, valid, servers, selected):
         self.cards["Total Tokens"].set_value(total)

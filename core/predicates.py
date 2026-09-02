@@ -33,16 +33,18 @@ def categorize(info: dict[str, Any]) -> TokenCategory:
     return TokenCategory.VALID
 
 
-def pass_filters(info: dict[str, Any], filters: dict[str, bool]) -> bool:
-    """Return True when *info* survives the active category filters.
+def pass_filters(info: dict[str, Any], view_filter: str) -> bool:
+    """Return True when *info* survives the active list filter.
 
-    ``filters`` is keyed by the string values of :class:`TokenCategory`.
+    ``view_filter`` is one of ``"all"`` (every token), ``"valid"`` (any token
+    with a recognised user id, including Nitro/phone copies), or ``"invalid"``
+    (dead/locked tokens). Presence of Nitro/phone is a style badge, not a
+    filter.
     """
-    cat = categorize(info)
-    key = cat.value
-    if not filters.get(key, True):
-        return False
-    return True
+    if view_filter == "all":
+        return True
+    valid = status(info) is TokenStatus.VALID
+    return valid if view_filter == "valid" else not valid
 
 
 def match_search(info: dict[str, Any], query: str) -> bool:
