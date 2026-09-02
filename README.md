@@ -41,7 +41,7 @@ Pick the flavor that suits you. All three are the same **v1.0.0** build.
 | --- | --- | --- |
 | Compact | `DiscordTokenManager-compact.exe` | Single self-contained EXE, no install |
 | Portable | `DiscordTokenManager-portable.zip` | Zipped folder, extract and run anywhere |
-| Setup | `DiscordTokenManager-setup.exe` | Guideyouinstaller with Start Menu/Desktop shortcuts and uninstall |
+| Setup | `DiscordTokenManager-setup.exe` | Guided installer with Start Menu/Desktop shortcuts and uninstall |
 
 Get them from the [releases page](https://github.com/mnishantlabs/Discord-Multiple-VC-Joiner/releases) or download directly from the [website](https://mnishantlabs.github.io/Discord-Multiple-VC-Joiner/).
 
