@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Discord Token Manager — Organize, validate &amp; join voice channels in bulk</title>
+<meta name="description" content="A free, offline-first Windows desktop tool to organize and validate multiple Discord accounts and join their voice channels in bulk. Download the compact, portable, or installer edition.">
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%235865f2'/><text x='50' y='68' font-size='50' font-family='Segoe UI, Arial' font-weight='800' text-anchor='middle' fill='white'>D</text></svg>">
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top"><span class="logo">D</span> <span>Discord Token Manager</span></a>
+    <nav>
+      <a href="#features">Features</a>
+      <a href="#download">Download</a>
+      <a href="#faq">FAQ</a>
+      <a href="#about">About</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero" id="top">
+  <div class="wrap">
+    <div class="hero-badge">v1.0.0 · Free · Open source</div>
+    <h1>Take control of many Discord<br>accounts, from one clean window</h1>
+    <p class="hero-sub">Discord Token Manager lets you organize all your Discord accounts in neat, resizable panels — validate every token in seconds, pin the servers you care about, and join voice channels with a single click.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="https://github.com/mnishantlabs/Discord-Multiple-VC-Joiner/releases/download/v1.0.0/DiscordTokenManager-setup.exe">Download installer</a>
+      <a class="btn btn-ghost" href="https://github.com/mnishantlabs/Discord-Multiple-VC-Joiner/releases/tag/v1.0.0">View all downloads</a>
+    </div>
+    <div class="hero-note">Windows 10/11 · Portable &amp; compact options · No sign-up, works offline</div>
+  </div>
+</section>
+
+<section class="section" id="features">
+  <div class="wrap">
+    <h2>Why you'll like it</h2>
+    <div class="grid">
+      <div class="card"><h3>Resizable panels</h3><p>Accounts, servers, and voice channels each live in their own draggable pane. Drag the dividers, double-click to reset, and the layout is remembered between sessions.</p></div>
+      <div class="card"><h3>Bulk validation</h3><p>Check every token in one pass with smart concurrency and rate-limit handling. All / Valid / Invalid filters keep the bad ones out of your way.</p></div>
+      <div class="card"><h3>One-click voice join</h3><p>Pick a server, pick a channel, and join selected accounts to it — with configurable delays, proxies, and microphone/speaker (self-mute &amp; self-deaf) toggles.</p></div>
+      <div class="card"><h3>Privacy first</h3><p>Everything is stored locally in your user profile. The app never uploads your tokens anywhere.</p></div>
+      <div class="card"><h3>Modern Windows UI</h3><p>Dark theme with Windows 11 Mica/Acrylic backdrop, command palette (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>), and dense/compact card modes.</p></div>
+      <div class="card"><h3>Three ways to install</h3><p>Compact single-file EXE (no install), a portable zipped folder, or a proper Setup wizard with Start Menu and Desktop shortcuts.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt" id="download">
+  <div class="wrap">
+    <h2>Download</h2>
+    <p class="lede">Pick the flavor that fits how you like to run apps. All three are the same <strong>v1.0.0</strong> build.</p>
+    <div class="downloads">
+      <a class="dl" data-asset="DiscordTokenManager-compact.exe" href="https://github.com/mnishantlabs/Discord-Multiple-VC-Joiner/releases/download/v1.0.0/DiscordTokenManager-compact.exe">
+        <span class="dl-tag">EXE</span>
+        <span class="dl-body"><strong>Compact</strong><small>Single .exe · no install · ~15 MB</small></span>
+        <span class="dl-btn">Download</span>
+      </a>
+      <a class="dl" data-asset="DiscordTokenManager-portable.zip" href="https://github.com/mnishantlabs/Discord-Multiple-VC-Joiner/releases/download/v1.0.0/DiscordTokenManager-portable.zip">
+        <span class="dl-tag">ZIP</span>
+        <span class="dl-body"><strong>Portable</strong><small>Zipped folder · copy anywhere · ~15 MB</small></span>
+        <span class="dl-btn">Download</span>
+      </a>
+      <a class="dl" data-asset="DiscordTokenManager-setup.exe" href="https://github.com/mnishantlabs/Discord-Multiple-VC-Joiner/releases/download/v1.0.0/DiscordTokenManager-setup.exe">
+        <span class="dl-tag">SETUP</span>
+        <span class="dl-body"><strong>Setup</strong><small>Installer · Start Menu &amp; Desktop · ~27 MB</small></span>
+        <span class="dl-btn">Download</span>
+      </a>
+    </div>
+    <p class="muted">Prefer the source? Everything is on <a href="https://github.com/mnishantlabs/Discord-Multiple-VC-Joiner">GitHub</a> — report issues, request features, or build it yourself with PyInstaller.</p>
+  </div>
+</section>
+
+<section class="section" id="faq">
+  <div class="wrap">
+    <h2>FAQ</h2>
+    <div class="faq">
+      <details open>
+        <summary>Is this an official Discord product?</summary>
+        <p>No. This is an independent, community-made desktop tool. It is not affiliated with, endorsed by, or connected to Discord Inc. in any way.</p>
+      </details>
+      <details>
+        <summary>Where are my tokens stored?</summary>
+        <p>Only locally on your machine, in <code>%APPDATA%\DiscordTokenManager</code>. Nothing is sent to any server, and the downloadable files contain no tracking or telemetry.</p>
+      </details>
+      <details>
+        <summary>Is using tokens safe?</summary>
+        <p>Automated use of Discord accounts (including token-based login and bulk actions) can violate Discord's Terms of Service and may result in account restrictions. Use this tool only on accounts you own, responsibly, and at your own risk.</p>
+      </details>
+      <details>
+        <summary>What are the system requirements?</summary>
+        <p>Windows 10 or 11, 64-bit. The compact EXE and setup installer need write access to a local folder (<code>%LOCALAPPDATA%</code>) and an internet connection for Discord's API. No admin rights are required.</p>
+      </details>
+      <details>
+        <summary>How do I uninstall?</summary>
+        <p>If you used the Setup edition, run <em>Uninstall Discord Token Manager</em> from the Start Menu. For Compact or Portable editions, just delete the file or folder.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt" id="about">
+  <div class="wrap">
+    <h2>About this project</h2>
+    <p class="lede">Discord Token Manager is a Windows desktop app written in Python with a CustomTkinter interface. It started as a personal utility to replace juggling a plain-text file of tokens, and grew into a full three-pane manager with validation, voice joining, proxying, and a modern look.</p>
+    <div class="about-grid">
+      <div>
+        <h3>Track record</h3>
+        <ul>
+          <li>Token import from file or clipboard</li>
+          <li>Bulk validation with rate-limit safety</li>
+          <li>Server pinning &amp; smart search</li>
+          <li>Voice join with delay, proxy &amp; self-deaf/mute controls</li>
+          <li>Activity/reason presets</li>
+          <li>Automatic validation on startup</li>
+        </ul>
+      </div>
+      <div>
+        <h3>The code</h3>
+        <ul>
+          <li>Python 3 · CustomTkinter · PyInstaller builds</li>
+          <li>Clean architecture: domain <code>core</code>, <code>services</code>, <code>controllers</code>, <code>ui</code></li>
+          <li>Open source on <a href="https://github.com/mnishantlabs/Discord-Multiple-VC-Joiner">GitHub</a></li>
+          <li>MIT-friendly, community contributions welcome</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap footer-inner">
+    <div>
+      <strong>Discord Token Manager</strong>
+      <span class="muted">v1.0.0 — independent tool, not affiliated with Discord.</span>
+    </div>
+    <nav class="footer-links">
+      <a href="https://github.com/mnishantlabs/Discord-Multiple-VC-Joiner">Source</a>
+      <a href="https://github.com/mnishantlabs/Discord-Multiple-VC-Joiner/issues">Issues</a>
+      <a href="https://github.com/mnishantlabs/Discord-Multiple-VC-Joiner/releases">Releases</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
