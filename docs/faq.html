@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>faq — discord multiple vc joiner</title>
+<meta name="description" content="Frequently asked questions about Discord Token Manager — safety, storage, system requirements, uninstallation, and more.">
+<link rel="icon" type="image/svg+xml" href="../assets/icon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/icon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../assets/icon-16.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;700&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+    :root{--bg:#0d1117;--bg-card:#161b22;--bg-hover:#1c2128;--border:#30363d;--border-light:#484f58;--text:#e6edf3;--text-muted:#8b949e;--text-dim:#6e7681;--accent:#3B82F6;--accent-glow:rgba(59,130,246,.3);--accent-2:#58a6ff;--success:#3fb950;--warning:#d29922;--ff-body:'Manrope',system-ui,sans-serif;--ff-mono:'Geist Mono','SF Mono',monospace;--fs-hero:clamp(2.2rem,6vw,3.8rem);--fs-h1:clamp(1.8rem,4vw,2.6rem);--fs-h2:clamp(1.4rem,3vw,1.9rem);--fs-h3:clamp(1.1rem,2vw,1.35rem);--fs-body:1rem;--fs-small:.875rem;--fs-xs:.75rem;--fs-mono:.8rem;--fw-light:300;--fw-regular:400;--fw-medium:500;--fw-semi:600;--fw-bold:700;--fw-extra:800;--space-xs:.25rem;--space-sm:.5rem;--space-md:1rem;--space-lg:1.5rem;--space-xl:2.5rem;--space-2xl:4rem;--space-3xl:6rem;--radius-sm:6px;--radius-md:10px;--radius-full:9999px;--ease:cubic-bezier(.4,0,.2,1);--duration:.3s}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+    body{font-family:var(--ff-body);font-size:var(--fs-body);color:var(--text);background:var(--bg);min-height:100vh;overflow-x:hidden;line-height:1.6}
+    a{color:inherit;text-decoration:none}
+    .glow{position:fixed;border-radius:50%;filter:blur(140px);opacity:.25;pointer-events:none;z-index:0}
+    .glow-1{width:600px;height:600px;background:var(--accent);top:-200px;right:-150px;opacity:.15}
+    .glow-2{width:500px;height:500px;background:var(--accent-2);bottom:-150px;left:-150px;opacity:.1}
+    .landing{position:relative;min-height:100vh}
+    .nav{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:var(--space-lg) var(--space-xl);max-width:1200px;margin:0 auto}
+    .logo{display:flex;align-items:center;gap:var(--space-sm)}
+    .logo-icon{font-size:1.4rem;color:var(--accent)}
+    .logo-text{font-family:var(--ff-mono);font-size:var(--fs-small);font-weight:var(--fw-medium);letter-spacing:-.02em;text-transform:lowercase}
+    .nav-links{display:flex;gap:var(--space-xs)}
+    .nav-link{font-family:var(--ff-mono);font-size:var(--fs-xs);font-weight:var(--fw-medium);color:var(--text-muted);text-transform:lowercase;padding:.4rem .75rem;border-radius:var(--radius-sm);border:1px solid transparent;transition:all var(--duration) var(--ease)}
+    .nav-link:hover,.nav-link.active{color:var(--text);background:var(--bg-hover);border-color:var(--border)}
+    .hero{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:var(--space-3xl) var(--space-xl) var(--space-2xl);text-align:center}
+    .badge{display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .8rem .3rem .6rem;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:var(--space-xl)}
+    .badge-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
+    .badge-text{font-family:var(--ff-mono);font-size:11px;font-weight:var(--fw-medium);color:var(--text-muted);text-transform:lowercase;letter-spacing:.02em}
+    .hero-title{font-size:var(--fs-hero);font-weight:var(--fw-extra);line-height:1.05;letter-spacing:-.04em;margin-bottom:var(--space-lg)}
+    .hero-subtitle{font-size:var(--fs-body);color:var(--text-muted);max-width:560px;margin:0 auto var(--space-xl);line-height:1.7}
+    .section{position:relative;z-index:1;max-width:800px;margin:0 auto;padding:var(--space-2xl) var(--space-xl)}
+    .faq-list{display:flex;flex-direction:column;gap:var(--space-md)}
+    .faq-item{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:var(--space-xl);transition:border-color var(--duration) var(--ease)}
+    .faq-item:hover{border-color:var(--accent)}
+    .faq-q{font-size:var(--fs-h3);font-weight:var(--fw-semi);letter-spacing:-.02em;margin-bottom:var(--space-sm);color:var(--text)}
+    .faq-a{font-size:var(--fs-small);color:var(--text-muted);line-height:1.7}
+    .footer{position:relative;z-index:1;padding:var(--space-xl);border-top:1px solid var(--border);margin-top:var(--space-2xl)}
+    .footer-inner{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:var(--space-sm);flex-wrap:wrap}
+    .footer-text{font-size:var(--fs-xs);color:var(--text-dim)}
+    .footer-mono{font-family:var(--ff-mono);font-size:var(--fs-xs);color:var(--text-dim)}
+    .footer-links{display:flex;gap:var(--space-sm)}
+    .footer-links a{font-family:var(--ff-mono);font-size:var(--fs-xs);color:var(--text-dim);transition:color var(--duration) var(--ease);text-transform:lowercase}
+    .footer-links a:hover{color:var(--accent)}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    @media(max-width:768px){.nav{padding:var(--space-md);flex-direction:column;gap:var(--space-sm)}.hero{padding:var(--space-2xl) var(--space-md) var(--space-xl)}.footer-inner{flex-direction:column;text-align:center}}
+    .icon-sm{width:16px;height:16px;flex-shrink:0;display:inline-block;vertical-align:middle}
+    .icon-xs{width:14px;height:14px;flex-shrink:0;display:inline-block;vertical-align:middle}
+    .icon-lg{width:48px;height:48px;margin-bottom:var(--space-md)}
+</style>
+</head>
+<body>
+<div class="landing">
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+
+    <nav class="nav">
+        <div class="logo">
+            <span class="logo-icon"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L3 6V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V6L12 2Z" fill="#3B82F6" stroke="#e6edf3" stroke-width="1.8" stroke-linejoin="round"/></svg></span>
+            <span class="logo-text">discord multiple vc joiner</span>
+        </div>
+        <div class="nav-links">
+            <a href="index.html" class="nav-link">home</a>
+            <a href="download.html" class="nav-link">download</a>
+            <a href="setup.html" class="nav-link">setup</a>
+            <a href="faq.html" class="nav-link active">faq</a>
+            <a href="changelog.html" class="nav-link">changelog</a>
+        </div>
+    </nav>
+
+    <main class="hero">
+        <div class="badge">
+            <span class="badge-dot"></span>
+            <span class="badge-text">frequently asked questions</span>
+        </div>
+
+        <h1 class="hero-title">faq</h1>
+
+        <p class="hero-subtitle">
+            answers to common questions about how the app works,<br>
+            what it can and can't do, and how to stay safe.
+        </p>
+    </main>
+
+    <section class="section">
+        <div class="faq-list">
+            <div class="faq-item">
+                <h3 class="faq-q">is this an official discord product?</h3>
+                <p class="faq-a">no. this is an independent, community-made desktop tool. it is not affiliated with, endorsed by, or connected to discord inc. in any way.</p>
+            </div>
+            <div class="faq-item">
+                <h3 class="faq-q">where are my tokens stored?</h3>
+                <p class="faq-a">only locally on your machine, in <code style="font-family:var(--ff-mono);background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.1rem .35rem;font-size:var(--fs-xs)">%APPDATA%\DiscordTokenManager</code>. nothing is sent to any server, and the downloads contain no tracking.</p>
+            </div>
+            <div class="faq-item">
+                <h3 class="faq-q">is using tokens safe?</h3>
+                <p class="faq-a">automated use of discord accounts (including token-based login and bulk actions) can violate discord's terms of service. use this tool only on accounts you own, responsibly, and at your own risk.</p>
+            </div>
+            <div class="faq-item">
+                <h3 class="faq-q">what are the system requirements?</h3>
+                <p class="faq-a">windows 10 or 11, 64-bit. the compact exe and setup installer need write access to a local folder and an internet connection for discord's api. no admin rights required.</p>
+            </div>
+            <div class="faq-item">
+                <h3 class="faq-q">how do i uninstall?</h3>
+                <p class="faq-a">if you used the setup edition, run uninstall discord multiple vc joiner from the start menu. for compact or portable editions, just delete the file or folder.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-inner">
+            <span class="footer-text">made with &#9829; &middot; independent tool, not affiliated with discord</span>
+            <div class="footer-links">
+                <a href="https://github.com/mnishantlabs/Discord-Multiple-VC-Joiner" target="_blank" rel="noopener">source</a>
+                <a href="https://github.com/mnishantlabs/Discord-Multiple-VC-Joiner/issues" target="_blank" rel="noopener">issues</a>
+                <a href="https://github.com/mnishantlabs/Discord-Multiple-VC-Joiner/releases" target="_blank" rel="noopener">releases</a>
+                <span class="footer-mono">v1.0.1</span>
+            </div>
+        </div>
+    </footer>
+</div>
+</body>
+</html>
